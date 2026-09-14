@@ -1,0 +1,13 @@
+
+build/
+cmake-build-*/
+out/
+
+# vcpkg 
+vcpkg_installed/
+
+.vscode/*
+!.vscode/settings.json
+
+.DS_Store
+Thumbs.db
