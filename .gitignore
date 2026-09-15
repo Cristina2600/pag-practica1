@@ -2,6 +2,7 @@
 build/
 cmake-build-*/
 out/
+output/
 
 # vcpkg 
 vcpkg_installed/
