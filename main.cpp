@@ -4,7 +4,10 @@
 #include <GLFW/glfw3.h>
 //vamos a incluir renderer para las llamadas necesarias
 #include "Renderer.h"
-
+//Todo lo necesario para imgui
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 //TRABAJO AUTONOMO
 //laas variables globales son aquellas que necesitamos recordar entre distintas llamadas
@@ -60,16 +63,18 @@ void key_callback ( GLFWwindow *window, int key, int scancode, int action, int m
    std::cout << "Key callback called" << std::endl; 
 } 
  
-// - Esta función callback será llamada cada vez que se pulse algún botón 
-// del ratón sobre el área de dibujo OpenGL. 
+//usaremos imgui para notificar todos los eventos de taton 
 void mouse_button_callback ( GLFWwindow *window, int button, int action, int mods ) 
 { 
-     if ( action == GLFW_PRESS ) 
-   {  std::cout << "Pulsado el botón: " << button << std::endl; 
-   } 
-   else if ( action == GLFW_RELEASE ) 
-   {  std::cout << "Soltado el botón: " << button << std::endl; 
-   } 
+    ImGuiIO& io = ImGui::GetIO();
+    if (action == GLFW_PRESS)
+    {
+        io.AddMouseButtonEvent(button, true);
+    }
+    else if (action == GLFW_RELEASE)
+    {
+        io.AddMouseButtonEvent(button, false);
+    }
 } 
 
 
@@ -133,13 +138,41 @@ int main()
     // Será renderer quien trabaje ocn el buffer de color
     PAG::Renderer::getInstancia().inicializarOpenGL();
 
+        //iniciamos imgui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init();
+
     //ahora vamos a definir el bucle principal hasta que se cierre
      while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        // imgui creará el nuevo frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+
+        // Dibujado de la escena OpenGL (delegado en Renderer)
+        PAG::Renderer::getInstancia().refrescar();
+
+        // la interfaz de imgui va encima de la escena
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(window);
     }
     //limpieza de recursos
     std::cout << "Fin de la practica 2" << std::endl;
+       //liberamos recursos imgui
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwDestroyWindow(window);
     window = nullptr;
     glfwTerminate();
