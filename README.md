@@ -29,24 +29,32 @@ El archivo `.vscode/settings.json` incluye la ruta a vcpkg para que CMake pueda 
 También se puede compilar y ejecutar desde los botones **Build** y **▶** de la barra inferior, equivaldran a los comandos anteriores.
 
 
-## Ejercicio de reflexión: 
+## Ejercicio de reflexión
 
-No se admiten métodos de clase como `PAG::Renderer::refrescarVentana()`directamente, porque un método lleva un puntero oculto a `this` que no espera GLFW.
+### El problema
+
+GLFW espera normalmente firmas concretas, no cpn firmas pertenecientes a C, por ejemplo:
+
+```cpp
+void window_refresh_callback(GLFWwindow *window);
+```
+
+Por lo que no se admiten métodos de como `PAG::Renderer::refrescarVentana()`
+ya que un método lleva un puntero oculto a `this` que no espera
+GLFW.
+
+### La solución
 
 La solución es separar dos capas:
 
-1. **PAG::Renderer** aqui tendremos toda la lógica para dibujar (por ejemplo,
-   `refrescarVentana()`), y no sabe nada de GLFW ni fuera de la logica de dibujado — así queda
-   desacoplada y reutilizable.
+1. **PAG::Renderer** aquí tendremos toda la lógica para dibujar (por ejemplo,
+   `refrescarVentana()`), y no sabe nada de GLFW ni fuera de la lógica de
+   dibujado, así será completamente desacoplada y reutilizable. 
 
-2. Un módulo de "Aplicación" (típicamente `main.cpp` o una clase `PAG::Application`)
-   se encarga de:
+2. Un módulo que se encargará de:
    - Crear la instancia de `PAG::Renderer`.
-   - Guardar un puntero a esa instancia accesible desde las funciones callback,
-     bien como variable global/estática, bien mediante
-     `glfwSetWindowUserPointer(window, renderer)`.
-   - Definir las funciones callback en C como simples "puentes" que delegan
-     en el método real del objeto:
+   - Guardar un puntero para acceder desde las funciones, como `glfwSetWindowUserPointer(window, renderer)`.
+
 
 ```cpp
    void window_refresh_callback(GLFWwindow *window)
@@ -56,6 +64,13 @@ La solución es separar dos capas:
    }
 ```
 
+Aquí se puede observar:
+
+- `glfwGetWindowUserPointer(window)` le pregunta a la ventana para que le devuelva un `void*` (un puntero genérico ya que GLFW no sabe qué clase es).
+- `static_cast<PAG::Renderer*>(...)` el static cast realmente le dice al compilador que el tipo será `PAG::Renderer*`", y así llamar a sus métodos con normalidad.
+
 Con `glfwSetWindowUserPointer` evitamos una variable global, ya que el
-puntero al renderer queda asociado a la propia ventana de GLFW y se recupera
-con `glfwGetWindowUserPointer(window)` dentro de cada callback.
+puntero apuntará a la ventana de GLFW y se recupera con `glfwGetWindowUserPointer(window)` que devuelve el puntero genérico así si en algún momento tuvieras varias ventanas abiertas a la vez, cada una podría tener su propio renderer asociado. Con una variable global solo podrías tener un renderer "activo" para toda la aplicación.
+
+### Diagrama de clases 
+![diagrama](MAIN.png)
