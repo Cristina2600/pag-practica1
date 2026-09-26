@@ -1,17 +1,15 @@
-
 #ifndef RENDERER_H
 #define RENDERER_H
 #include <string>
+#include "Listener.h"
 
-//ahora si vamos a crear el espacio de nombres para las practias 
 namespace PAG
 {
-    //clase renderer, que se ocupa de las funciones de dibujo de opengl usando singleton
-    class Renderer
+    class Renderer : public Listener   // <-- AÑADIR ": public Listener"
     {
         private:
-            static Renderer* instancia;  //principio de singleton 
-             float _bgColor[4];  //esto es lo que define el color del fondo, lo normalizaremos para no salir del rango de color
+            static Renderer* instancia;
+            float _bgColor[4];
             Renderer ();
 
         public:
@@ -22,6 +20,7 @@ namespace PAG
             void refrescar ();
             void redimensionar (int width, int height);
             void cambiarColorFondo (float r, float g, float b);
+            void wakeUp (WindowType t, ...) override;
     };
 }
 

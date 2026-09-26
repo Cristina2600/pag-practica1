@@ -3,6 +3,7 @@
 
 #include "Renderer.h"
 #include <sstream>
+#include <cstdarg>
 
 namespace PAG
 {
@@ -88,4 +89,23 @@ namespace PAG
         _bgColor[2] = b;
         glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], _bgColor[3]);
     }
+    /**
+ * Procesa las notificaciones recibidas desde PAG::GUI (patron Observador)
+ */
+void Renderer::wakeUp (WindowType t, ...)
+{
+    switch (t)
+    {
+        case WindowType::Background:
+        {
+            std::va_list args;
+            va_start(args, t);
+            float* color = va_arg(args, float*);
+            va_end(args);
+
+            cambiarColorFondo(color[0], color[1], color[2]);
+            break;
+        }
+    }
+}
 }
