@@ -112,30 +112,8 @@ Dear ImGui es una biblioteca de interfaz sin objetos persistentes entre fotogram
 
 Toda esta comunicación queda encapsulada en GUI, de forma que si en el futuro se cambiara de biblioteca de interfaz, solo habría que modificar esa clase.
 
-Diagrama de clases (UML simplificado)
-+------------------+                              +-------------------+
-|   main.cpp       | ---- usa -------------------> |       GLFW        |
-+------------------+                              +-------------------+
-        |
-        | usa / registra listener
-        v
-+---------------------+   notifica (wakeUp)    +----------------------+
-|      PAG::GUI        | ----------------------> |    PAG::Renderer     |
-|     (Singleton)       |   (patron Observador)   |    (Singleton)        |
-| sujeto observable      |                        | implementa Listener   |
-+---------------------+                          +----------------------+
-        |                                                  |
-        v                                                  v
-    Dear ImGui                                          OpenGL
+### Diagrama de clases 
+![alt text](UML-P2.png)
 
-+------------------+
-|  PAG::Listener    |  <-- interfaz (clase abstracta, metodo wakeUp puro)
-+------------------+
-        ^
-        | hereda
-+------------------+
-|  PAG::Renderer    |
-+------------------+
-
-PAG::GUI mantiene una lista de objetos PAG::Listener suscritos (_listeners). Cuando el usuario cambia el color en el selector, GUI recorre esa lista y llama a wakeUp(WindowType::Background, ...) en cada uno. PAG::Renderer implementa Listener, por lo que recibe esa notificación y actualiza su color de fondo interno, que a su vez se traduce en una llamada a glClearColor.
+Gui tendrá una lista de objets de tipo listener dentro de una lista, cada vez que el color de fondo sea cambiado, recorrerá esta lista y notificará a todos los sucritos mediante la función wakeup. Listener se encuentra implementado en renderer por lo que al recibir la notificación actualizará el color interno llamando a glClearColor
 
