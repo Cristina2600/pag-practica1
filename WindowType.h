@@ -7,11 +7,11 @@ namespace PAG
 {
     /**
      * @brief Identifica que ventana/control de la interfaz ha generado
-     *        una notificacion. Se ira ampliando segun crezca la interfaz.
+     *        una notificacion.
      */
     enum class WindowType
     {
-        Background  ///< Notificacion del selector de color de fondo
+        Background  //Notificacion del selector de color de fondo
     };
 }
 

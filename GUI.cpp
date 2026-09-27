@@ -8,7 +8,7 @@
 
 namespace PAG
 {
-    GUI* GUI::instancia = nullptr;
+    GUI* GUI::instancia = nullptr; //reservamos memoria inicialmente para el atributo static
 
     /**
      * Constructor por defecto
@@ -33,7 +33,7 @@ namespace PAG
     {
         if (!instancia)
         {
-            instancia = new GUI;
+            instancia = new GUI; //por esto teniamos que iniciar antes instancia
         }
         return *instancia;
     }
@@ -46,58 +46,56 @@ namespace PAG
     void GUI::inicializar (GLFWwindow* window)
     {
         IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        ImGui::CreateContext(); //crea contexto, lo que hace es guardar el estado y se llama una sola vez 
+        ImGuiIO& io = ImGui::GetIO(); //esto es para entradas y salidas 
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; //esto es para la navegacion por teclado 
 
-        ImGui_ImplGlfw_InitForOpenGL(window, true);
-        ImGui_ImplOpenGL3_Init();
+        ImGui_ImplGlfw_InitForOpenGL(window, true); //aqui conectamos nuestra ventana para recibir los eventos que sucedan
+        ImGui_ImplOpenGL3_Init(); //shaders y buffers de opengl
     }
 
     /**
-     * Construye el contenido de todas las ventanas de la interfaz.
+     * Construye la ventana de la interfaz.
      * Debe llamarse en cada vuelta del bucle principal, antes de
      * renderizar() y antes de dibujar la escena OpenGL.
      */
     void GUI::dibujarControles ()
     {
+        //esta parte siempre va en este orden al inicio 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // --- Ventana: selector de color de fondo ---
+        // Donde aparecerá la ventana, primero le dices la posicion y
+        //ImGuiCond_once te dice que solo la dibujes una vez al inicio, si no la pongo no podemos mover la ventana porque se redibujaria
         ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
-        if (ImGui::Begin("Fondo"))
+        if (ImGui::Begin("Fondo")) //crea la ventana llamandola fondo
         {
-            ImGui::SetWindowFontScale(1.0f);
-            if (ImGui::ColorEdit3("Actual", _bgColorPicker))
+            ImGui::SetWindowFontScale(1.0f); //le da un tamaño al texto dentro de la ventana
+            if (ImGui::ColorEdit3("Actual", _bgColorPicker)) //aqui colorEdit3 dibuja el control y modifica el color que hemos definido antes
             {
-                // ColorEdit3 devuelve true SOLO en el frame en que el
+                // ColorEdit3 devuelve true cuando el
                 // usuario ha modificado el color. Es aqui donde
                 // notificamos a los observadores (patron Observador).
-                warnListenersBackground();
+                AvisarListenersCambioFondo();
             }
         }
-        ImGui::End();
+        ImGui::End(); //esto se llama siempre se abra o no la ventana por si acaso
 
-        // --- Ventana: mensajes de la aplicacion ---
+        // Aqui tenemos otra ventana igual que antes pero para ver los mensajes
         ImGui::SetNextWindowPos(ImVec2(300, 10), ImGuiCond_Once);
         if (ImGui::Begin("Mensajes"))
         {
-            ImGui::SetWindowFontScale(1.0f);
-            for (const std::string& m : _mensajes)
+            ImGui::SetWindowFontScale(1.0f); //le damos un tamaño a la letra
+            for (const std::string& m : _mensajes)  //recorremos todos los mensajes
             {
-                ImGui::TextUnformatted(m.c_str());
+                ImGui::TextUnformatted(m.c_str()); //aqui usamos texto sin formato por si hay algun caracter raro que pueda dar problemas
             }
         }
         ImGui::End();
     }
 
-    /**
-     * Renderiza la interfaz construida en dibujarControles().
-     * Debe llamarse DESPUES de dibujar la escena OpenGL, porque
-     * ImGui se dibuja por encima del contenido del viewport.
-     */
+   //esto NO DIBUJA NADA solo calcula vertices y todo lo que hemos definido anteriormente, esto llama a opengl para que lo pinte
     void GUI::renderizar ()
     {
         ImGui::Render();
@@ -118,9 +116,9 @@ namespace PAG
     /**
      * Suscribe un observador a las notificaciones de esta GUI
      */
-    void GUI::addListener (Listener* listener)
+    void GUI::anadirListener (Listener* listener)
     {
-        _listeners.push_back(listener);
+        _listeners.push_back(listener); //funciones de los vectores dinámicos
     }
 
     /**
@@ -134,11 +132,11 @@ namespace PAG
     /**
      * Recorre la lista de observadores y notifica el nuevo color de fondo
      */
-    void GUI::warnListenersBackground ()
+    void GUI::AvisarListenersCambioFondo ()
     {
         for (size_t i = 0; i < _listeners.size(); i++)
         {
-            _listeners[i]->wakeUp(WindowType::Background, &_bgColorPicker[0]);
+            _listeners[i]->wakeUp(WindowType::Background, &_bgColorPicker[0]); //usamos la funcion wake up para notificarles el cambio
         }
     }
 }

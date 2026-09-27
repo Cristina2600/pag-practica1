@@ -14,3 +14,5 @@ vcpkg_installed/
 Thumbs.db
 
 *.pdb
+
+imgui.ini

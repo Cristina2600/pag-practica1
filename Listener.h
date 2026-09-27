@@ -3,7 +3,7 @@
 #ifndef LISTENER_H
 #define LISTENER_H
 
-#include "WindowType.h"
+#include "WindowType.h" //aqui tenemos que incluirlo entero porque luego manejaremos distintos tipos en el enum
 
 namespace PAG
 {
@@ -15,14 +15,11 @@ namespace PAG
     class Listener
     {
         public:
-            Listener () = default; //constructor
-            virtual ~Listener () = default; //metodo virtual
+            Listener () = default; //constructor por defecto, en este caso no debe ser privado porque habrá más de una instancia
+            virtual ~Listener () = default; //destructor obligatoriamente virtual por el poliformismo que implementamos con renderer 
 
-            /**
-             *esto es lo que se llama para notificar el cambio
-             * El tipo de argumentos variables depende del
-             * WindowType recibido.
-             */
+            //este es el método que va a notificar, es virtual puro para que el resto de clases lo tengan que implementar
+            //
             virtual void wakeUp (WindowType t, ...) = 0;
     };
 }

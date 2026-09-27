@@ -74,3 +74,68 @@ puntero apuntará a la ventana de GLFW y se recupera con `glfwGetWindowUserPoint
 
 ### Diagrama de clases 
 ![diagrama](MAIN.png)
+
+
+## Práctica 2: patrones Singleton y Observador
+### Cambios realizados respecto a la Práctica 1
+
+Creamos la clase renderer usando el patron singleton, que centraliza todas las llamadas a OpenGL. main.cpp ya no llama a ninguna función de OpenGL directamente, solo a GLFW, GLAD y Renderer.
+Comenzamos a trabajar con Dear ImGui como biblioteca de interfaz, encapsulada en la clase GUI (también Singleton), que centraliza toda la comunicación con ImGui.
+Añadimos el patrón Observador para comunicar los cambios de la interfaz a Renderer, gracias a la interfaz PAG::Listener y el método wakeUp() que tendrá parámetros variables para que en un futuro podamos trabajar con distintos casos.
+Ahora mostraremos los mensajes que antes estaban en la consola en una ventana flotante de ImGui.
+El bucle principal ahora será continuo ya que Dear ImGui debe reconstruirse en cada fotograma.
+
+### Patrón Singleton
+
+Una clase tendrá una única instancia en toda la ejecución, accesible desde cualquier lugar. Se implementa con:
+
+Un atributo static privado, puntero a la propia clase, la unica instancia.
+Un constructor privado, que impide crear objetos desde fuera de la clase.
+Un método público y estático getInstancia() el cual verifica si ya se ha creado o crea el objeto. Esto es importante porque Renderer necesita que ya exista un contexto OpenGL activo antes de poder configurarse.
+
+
+### Patrón Observador
+
+Cambiamos el funcionamiento para notificar a los listeners cuando el color del fondo cambia sin que esos objetos estén constantemente preguntando si algo ha cambiado.
+ En su lugar, es el propio objeto observado quien avisa activamente en el instante exacto del cambio.
+
+Implementacion:
+
+Listener: interfaz implementada mediante una clase abstracta con un único método virtual puro, wakeUp, que deben implementar todos los observadores.
+WindowType: enum que identificará el tipo y por tanto origen de cada notificación.
+GUI: será sujeto observable. Tiene un vector<Listener*> _listeners con los observadores suscritos. Cuando el el color del fondo sea modificado, llamará a wakeUp en cada observador suscrito.
+Renderer: hereda de Listener e implementa wakeUp, procesando la notificación según el WindowType recibido y actualizando su color de fondo interno.
+
+La suscripción se realiza en main.cpp:
+
+Dear ImGui es una biblioteca de interfaz sin objetos persistentes entre fotogramas, en cada vuelta del bucle principal se vuelve a "describir" la interfaz completa. Por este motivo, el dibujado de la interfaz pasa a depender de un bucle continuo, en lugar de eventos de refresco de GLFW.
+
+Toda esta comunicación queda encapsulada en GUI, de forma que si en el futuro se cambiara de biblioteca de interfaz, solo habría que modificar esa clase.
+
+Diagrama de clases (UML simplificado)
++------------------+                              +-------------------+
+|   main.cpp       | ---- usa -------------------> |       GLFW        |
++------------------+                              +-------------------+
+        |
+        | usa / registra listener
+        v
++---------------------+   notifica (wakeUp)    +----------------------+
+|      PAG::GUI        | ----------------------> |    PAG::Renderer     |
+|     (Singleton)       |   (patron Observador)   |    (Singleton)        |
+| sujeto observable      |                        | implementa Listener   |
++---------------------+                          +----------------------+
+        |                                                  |
+        v                                                  v
+    Dear ImGui                                          OpenGL
+
++------------------+
+|  PAG::Listener    |  <-- interfaz (clase abstracta, metodo wakeUp puro)
++------------------+
+        ^
+        | hereda
++------------------+
+|  PAG::Renderer    |
++------------------+
+
+PAG::GUI mantiene una lista de objetos PAG::Listener suscritos (_listeners). Cuando el usuario cambia el color en el selector, GUI recorre esa lista y llama a wakeUp(WindowType::Background, ...) en cada uno. PAG::Renderer implementa Listener, por lo que recibe esa notificación y actualiza su color de fondo interno, que a su vez se traduce en una llamada a glClearColor.
+

@@ -8,6 +8,8 @@
 #include "Renderer.h"
 #include "GUI.h"
 
+//primero definimos todos los callbacks que ya no usand funciones de opengl si no las definidas en el resto de modulos
+
 void error_callback(int errno_, const char* desc)
 {
     std::string aux(desc);
@@ -32,25 +34,25 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     ImGuiIO& io = ImGui::GetIO();
     if (action == GLFW_PRESS)
     {
-        io.AddMouseButtonEvent(button, true);
         PAG::GUI::getInstancia().aniadirMensaje("Pulsado el boton: " + std::to_string(button));
     }
     else if (action == GLFW_RELEASE)
     {
-        io.AddMouseButtonEvent(button, false);
         PAG::GUI::getInstancia().aniadirMensaje("Soltado el boton: " + std::to_string(button));
     }
 }
 
 int main()
 {
+    glfwSetErrorCallback((GLFWerrorfun) error_callback);
+
+
     if (glfwInit() != GLFW_TRUE)
     {
         std::cout << "Fallo al iniciar GLFW" << std::endl;
         return -1;
     }
 
-    glfwSetErrorCallback((GLFWerrorfun) error_callback);
 
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -84,8 +86,8 @@ int main()
     PAG::Renderer::getInstancia().inicializarOpenGL();
     PAG::GUI::getInstancia().inicializar(window);
 
-    // --- Patron Observador: Renderer se suscribe a las notificaciones de GUI ---
-    PAG::GUI::getInstancia().addListener(&PAG::Renderer::getInstancia());
+    // Patron Observador: Renderer se suscribe a las notificaciones de GUI 
+    PAG::GUI::getInstancia().anadirListener(&PAG::Renderer::getInstancia());
 
     // Los mensajes ya no van a consola, van a la ventana "Mensajes" de ImGui
     PAG::GUI::getInstancia().aniadirMensaje(PAG::Renderer::getInstancia().consultarCapacidadesOpenGL());

@@ -7,14 +7,14 @@
 
 namespace PAG
 {
-    Renderer* Renderer::instancia = nullptr;
+    Renderer* Renderer::instancia = nullptr; //debemos declarar la instancia por el atributo estático
 
     /**
      * Constructor por defecto
      */
     Renderer::Renderer ()
     {
-         _bgColor[0] = 0.6f;
+         _bgColor[0] = 0.6f; //gris
         _bgColor[1] = 0.6f;
         _bgColor[2] = 0.6f;
         _bgColor[3] = 1.0f;
@@ -27,16 +27,16 @@ namespace PAG
     { }
 
     /**
-     * Consulta del objeto único de la clase
+     * consulta el unico objeto que hay
      * @return La dirección de memoria del objeto
      */
     Renderer& Renderer::getInstancia ()
     {
-        if (!instancia)
+        if (!instancia) //si no hay ==nullptr
         {
-            instancia = new Renderer;
+            instancia = new Renderer; //la crea
         }
-        return *instancia;
+        return *instancia; //devuelve la direccion de memoria
     }
 
   /**
@@ -45,8 +45,8 @@ namespace PAG
      */
     void Renderer::inicializarOpenGL ()
     {
-        glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], _bgColor[3]);
-        glEnable(GL_DEPTH_TEST);
+        glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], _bgColor[3]); //aplicamos el clor de fondo que hemos declarado en el cosntructor
+        glEnable(GL_DEPTH_TEST); //activamos opengl
     }
 
 
@@ -90,20 +90,20 @@ namespace PAG
         glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], _bgColor[3]);
     }
     /**
- * Procesa las notificaciones recibidas desde PAG::GUI (patron Observador)
- */
+    *Aplicando el patron observador, recibe y procesa todo lo que le mande GUI
+    */
 void Renderer::wakeUp (WindowType t, ...)
 {
-    switch (t)
+    switch (t) //ahora solo hay un case pero luego te permitirá trabajar con mas tipos segun el enum
     {
-        case WindowType::Background:
+        case WindowType::Background: //tipo en el enum
         {
-            std::va_list args;
-            va_start(args, t);
-            float* color = va_arg(args, float*);
-            va_end(args);
+            va_list args;
+            va_start(args, t); //esto dice, los argumentos variables van despues de t
+            float* color = va_arg(args, float*); //ahora va a tomar el siguiente argumento y lo tomará como un float 
+            va_end(args); //cierras la lista
 
-            cambiarColorFondo(color[0], color[1], color[2]);
+            cambiarColorFondo(color[0], color[1], color[2]); //llamas a la funcion para que aplique los cambios 
             break;
         }
     }
