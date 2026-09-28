@@ -93,6 +93,10 @@ int main()
     PAG::GUI::getInstancia().aniadirMensaje(PAG::Renderer::getInstancia().consultarCapacidadesOpenGL());
     PAG::GUI::getInstancia().aniadirMensaje("Aplicacion PAG - Practica 2 iniciada");
 
+    //vamos a llamar  los shaders y su geometria desde renderer
+    PAG::Renderer::getInstancia().creaShaderProgram (); 
+    PAG::Renderer::getInstancia().creaModelo ();
+
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
