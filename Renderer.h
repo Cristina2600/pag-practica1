@@ -29,6 +29,8 @@ namespace PAG
             void wakeUp (WindowType t, ...) override; // aqui tenemos la funcion que debemos redefinir desde la clase padre 
             void creaShaderProgram();
             void creaModelo();
+            //vamos a crear las funciones necesarias para controlar los errores
+            GLuint compilarShader (GLenum tipo, const std::string& fuente, const std::string& etiqueta);
         };
 }
 

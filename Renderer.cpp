@@ -4,6 +4,8 @@
 #include "Renderer.h"
 #include <sstream>
 #include <cstdarg>
+//include necesario para manejar los errores 
+#include <stdexcept>
 
 namespace PAG
 {
@@ -139,41 +141,7 @@ void Renderer::wakeUp (WindowType t, ...)
     }
 }
 
-//esto solo aplica color al fragmento sin ningun cálculo de la geometría
-/** 
- * Método para crear, compilar y enlazar el shader program 
- * @note No se incluye ninguna comprobación de errores 
- */ 
-void PAG::Renderer::creaShaderProgram( ) 
-{  std::string miVertexShader = 
-   "#version 410\n" 
-   "layout (location = 0) in vec3 posicion;\n" 
-   "void main ()\n" 
-   "{  gl_Position = vec4 ( posicion, 1 );\n" 
-   "}\n"; 
- 
-   std::string miFragmentShader = 
-   "#version 410\n" 
-   "out vec4 colorFragmento;\n" 
-   "void main ()\n" 
-   "{  colorFragmento = vec4 ( 1.0, .4, .2, 1.0 );\n" 
-   "}\n"; 
- 
-   idVS = glCreateShader ( GL_VERTEX_SHADER ); 
-   const GLchar* fuenteVS = miVertexShader.c_str (); 
-   glShaderSource ( idVS, 1, &fuenteVS, nullptr ); 
-   glCompileShader ( idVS ); 
- 
-   idFS = glCreateShader ( GL_FRAGMENT_SHADER ); 
-   const GLchar* fuenteFS = miFragmentShader.c_str (); 
-   glShaderSource ( idFS, 1, &fuenteFS, nullptr ); 
-   glCompileShader ( idFS ); 
- 
-   idSP = glCreateProgram (); 
-   glAttachShader ( idSP, idVS ); 
-   glAttachShader ( idSP, idFS ); 
-   glLinkProgram ( idSP ); 
-} 
+
 //Ahora vamos a almacenar vertices e indices
 /** 
  * Método para crear el VAO para el modelo a renderizar 
@@ -196,3 +164,91 @@ void PAG::Renderer::creaModelo ( )
    glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, idIBO ); 
    glBufferData ( GL_ELEMENT_ARRAY_BUFFER, 3*sizeof(GLuint), indices, GL_STATIC_DRAW ); 
 } 
+/**
+ * Compila un shader y comprueba el resultado
+ * @param tipo      GL_VERTEX_SHADER o GL_FRAGMENT_SHADER para saber con que
+ * @param fuente    codigo GLSL
+ * @param mensaje  nombre para el mensaje de error ("vertex shader"...)
+ * @throw std::runtime_error si no compila
+ */
+GLuint Renderer::compilarShader (GLenum tipo, const std::string& fuente,
+                                 const std::string& mensaje)
+{
+    GLuint id = glCreateShader(tipo);
+    const GLchar* texto = fuente.c_str();
+    glShaderSource(id, 1, &texto, nullptr);
+    glCompileShader(id);
+
+    GLint resultado = GL_FALSE;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &resultado);
+    if (resultado == GL_FALSE)
+    {
+        GLint longitud = 0;
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &longitud);
+        std::string log(static_cast<size_t>(longitud), '\0');
+        glGetShaderInfoLog(id, longitud, nullptr, &log[0]);
+
+        glDeleteShader(id);   // no dejamos un shader roto en la GPU
+        throw std::runtime_error("Error al compilar el " + mensaje + ":\n" + log);
+    }
+    return id;
+}
+//esto solo aplica color al fragmento sin ningun cálculo de la geometría
+/** 
+ * Método para crear, compilar y enlazar el shader program 
+ * @note ahora si incluye comprobación de errores 
+ */ 
+void Renderer::creaShaderProgram ()
+{
+    std::string miVertexShader =
+    "#version 410\n"
+    "layout (location = 0) in vec3 posicion;\n"
+    "void main ()\n"
+    "{  gl_Position = vec4 ( posicion, 1 );\n"
+    "}\n";
+
+    std::string miFragmentShader =
+    "#version 410\n"
+    "out vec4 colorFragmento;\n"
+    "void main ()\n"
+    "{  colorFragmento = vec4 ( 1.0, .4, .2, 1.0 );\n"
+    "}\n";
+
+    GLuint vs = compilarShader(GL_VERTEX_SHADER, miVertexShader, "vertex shader");
+
+    GLuint fs = 0;
+    try
+    {
+        fs = compilarShader(GL_FRAGMENT_SHADER, miFragmentShader, "fragment shader");
+    }
+    catch (...)
+    {
+        glDeleteShader(vs);   // el VS estaba bien: lo liberamos antes de propagar
+        throw;                // y relanzamos el mismo error hacia arriba
+    }
+
+    GLuint sp = glCreateProgram();
+    glAttachShader(sp, vs);
+    glAttachShader(sp, fs);
+    glLinkProgram(sp);
+
+    GLint resultado = GL_FALSE;
+    glGetProgramiv(sp, GL_LINK_STATUS, &resultado);
+    if (resultado == GL_FALSE)
+    {
+        GLint longitud = 0;
+        glGetProgramiv(sp, GL_INFO_LOG_LENGTH, &longitud);
+        std::string log(static_cast<size_t>(longitud), '\0');
+        glGetProgramInfoLog(sp, longitud, nullptr, &log[0]);
+
+        glDeleteProgram(sp);
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        throw std::runtime_error("Error al enlazar el shader program:\n" + log);
+    }
+
+    idVS = vs;   // solo guardamos los identificadores si TODO ha ido bien
+    idFS = fs;
+    idSP = sp;
+}
+}
