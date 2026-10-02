@@ -6,6 +6,7 @@
 #include <cstdarg>
 //include necesario para manejar los errores 
 #include <stdexcept>
+#include <fstream>
 
 namespace PAG
 {
@@ -198,33 +199,21 @@ GLuint Renderer::compilarShader (GLenum tipo, const std::string& fuente,
  * Método para crear, compilar y enlazar el shader program 
  * @note ahora si incluye comprobación de errores 
  */ 
-void Renderer::creaShaderProgram ()
+void Renderer::creaShaderProgram (const std::string& nombreBase)
 {
-    std::string miVertexShader =
-    "#version 410\n"
-    "layout (location = 0) in vec3 posicion;\n"
-    "void main ()\n"
-    "{  gl_Position = vec4 ( posicion, 1 );\n"
-    "}\n";
-
-    std::string miFragmentShader =
-    "#version 410\n"
-    "out vec4 colorFragmento;\n"
-    "void main ()\n"
-    "{  colorFragmento = vec4 ( 1.0, .4, .2, 1.0 );\n"
-    "}\n";
-
+    std::string miVertexShader = leerFichero(nombreBase + "-vs.glsl");
     GLuint vs = compilarShader(GL_VERTEX_SHADER, miVertexShader, "vertex shader");
 
     GLuint fs = 0;
     try
     {
+        std::string miFragmentShader = leerFichero(nombreBase + "-fs.glsl");
         fs = compilarShader(GL_FRAGMENT_SHADER, miFragmentShader, "fragment shader");
     }
     catch (...)
     {
-        glDeleteShader(vs);   // el VS estaba bien: lo liberamos antes de propagar
-        throw;                // y relanzamos el mismo error hacia arriba
+        glDeleteShader(vs);
+        throw;
     }
 
     GLuint sp = glCreateProgram();
@@ -247,8 +236,27 @@ void Renderer::creaShaderProgram ()
         throw std::runtime_error("Error al enlazar el shader program:\n" + log);
     }
 
-    idVS = vs;   // solo guardamos los identificadores si TODO ha ido bien
+    idVS = vs;
     idFS = fs;
     idSP = sp;
+}
+
+//funcion auxiliar para leer el fichero 
+/**
+ * Lee un fichero de texto completo
+ * @param ruta ruta del fichero
+ * @return el contenido completo como string
+ * @throw std::runtime_error si no se puede abrir
+ */
+std::string Renderer::leerFichero (const std::string& ruta)
+{
+    std::ifstream fichero (ruta);
+    if (!fichero.is_open())
+    {
+        throw std::runtime_error("No se pudo abrir el fichero: " + ruta);
+    }
+    std::stringstream ss;
+    ss << fichero.rdbuf();
+    return ss.str();
 }
 }

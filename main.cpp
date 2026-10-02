@@ -93,9 +93,15 @@ int main()
     PAG::GUI::getInstancia().aniadirMensaje(PAG::Renderer::getInstancia().consultarCapacidadesOpenGL());
     PAG::GUI::getInstancia().aniadirMensaje("Aplicacion PAG - Practica 2 iniciada");
 
+    try{
     //vamos a llamar  los shaders y su geometria desde renderer
-    PAG::Renderer::getInstancia().creaShaderProgram (); 
+    PAG::Renderer::getInstancia().creaShaderProgram ("shaders/pag03"); 
     PAG::Renderer::getInstancia().creaModelo ();
+    PAG::GUI::getInstancia().aniadirMensaje("Shaders y modelo creados correctamente");
+    }catch (const std::exception& e){
+    PAG::GUI::getInstancia().aniadirMensaje(e.what());
+    }
+    
 
     while (!glfwWindowShouldClose(window))
     {

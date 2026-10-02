@@ -18,3 +18,9 @@ add_executable(${PROJECT_NAME} ${MY_FILES} ${GLAD_FILES} ${IMGUI_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC GLAD/include imgui/include)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw OpenGL::GL)
+
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/shaders
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
