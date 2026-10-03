@@ -21,6 +21,10 @@ namespace PAG
             //para poder abrir los shaders, lo pongo privado al ser un metodo auxiliar 
             std::string leerFichero (const std::string& ruta);
             GLuint idVBOColores = 0;   // VBO de colores distinto del anterior
+
+            // atributos necesarios para mantener la sproporciones del triangulo tras redimensionar
+            GLint idUniformAspecto = -1;
+            float _aspect = 1024.0f / 576.0f; //estas son las proporciones generales 
         public:
             virtual ~Renderer (); //destructor virtual, lo necesita virtual porque hereda de listener y el si va a tener destructor virtual
             static Renderer& getInstancia (); //referencia a la instancia estática

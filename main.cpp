@@ -31,7 +31,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
-    ImGuiIO& io = ImGui::GetIO();
     if (action == GLFW_PRESS)
     {
         PAG::GUI::getInstancia().aniadirMensaje("Pulsado el boton: " + std::to_string(button));
@@ -42,6 +41,15 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     }
 }
 
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    static float r = 0.6f;
+    r += static_cast<float>(yoffset) * 0.05f;
+    if (r > 1.0f) r = 1.0f;
+    if (r < 0.0f) r = 0.0f;
+
+    PAG::Renderer::getInstancia().cambiarColorFondo(r, 0.6f, 0.6f);
+} 
 int main()
 {
     glfwSetErrorCallback((GLFWerrorfun) error_callback);
@@ -82,6 +90,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     PAG::Renderer::getInstancia().inicializarOpenGL();
     PAG::GUI::getInstancia().inicializar(window);

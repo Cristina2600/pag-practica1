@@ -87,18 +87,45 @@ void Renderer::liberarRecursos ()
     void Renderer::refrescar ()
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if (idSP == 0 || idVAO == 0)   // si se falla al cargar shaders, no hay nada que dibujar 
+        {
+            return;
+        }
+        //si al crear los shaders hay algun error, creaModelo no se ejecutará por lo que idsp, idvao y idibo se quedarán sin valor
+        //aunque tras las pruebas al asignarle un valor no generan un problema mayor que detenga el problema 
+        //Se queda congelado opengl ya que no tendrá geometría que dibujar
         glPolygonMode ( GL_FRONT_AND_BACK, GL_FILL );
         glUseProgram ( idSP ); 
+
+        //matriz para que en cada refresco se redimensione mi triangulo 
+        float sx = (_aspect > 1.0f) ? 1.0f / _aspect : 1.0f;
+        float sy = (_aspect > 1.0f) ? 1.0f : _aspect;
+
+        // Matriz de escalado 4x4, apta para opengl
+        GLfloat matriz[16] = {
+            sx,   0.0f, 0.0f, 0.0f,   // columna 0
+            0.0f, sy,   0.0f, 0.0f,   // columna 1
+            0.0f, 0.0f, 1.0f, 0.0f,   // columna 2
+            0.0f, 0.0f, 0.0f, 1.0f    // columna 3
+        };
+        glUniformMatrix4fv(idUniformAspecto, 1, GL_FALSE, matriz); 
+
         glBindVertexArray ( idVAO ); 
         glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, idIBO ); 
         glDrawElements ( GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr );
     }
     /**
      * Ajusta el viewport cuando cambia el tamaño de la ventana
+     * @note Ahora hemos añadido una proporcion del aspecto para que aunque cambie la pantalla siemore se mantenga en valores proporcionales  
      */
     void Renderer::redimensionar (int width, int height)
     {
-        glViewport(0, 0, width, height);
+         glViewport(0, 0, width, height);
+
+        if (height != 0)
+        {
+            _aspect = static_cast<float>(width) / static_cast<float>(height);
+        }
     }
 
     /**
@@ -261,6 +288,8 @@ void Renderer::creaShaderProgram (const std::string& nombreBase)
     idVS = vs;
     idFS = fs;
     idSP = sp;
+    //correccion al redimensionarf la pantalla 
+    idUniformAspecto = glGetUniformLocation(idSP, "correccionAspecto");
 }
 
 //funcion auxiliar para leer el fichero 
