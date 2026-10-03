@@ -29,7 +29,7 @@ namespace PAG
             GLint idUniformAspecto = -1;
             float _aspect = 1024.0f / 576.0f; //estas son las proporciones generales 
 
-            //atributo para forzar un error, si se ponea true no se ve el triangulo
+            //atributo para forzar un error, si se ponea true no se ve el triangulo y se depura por la ventana de la interfaz
             static const bool FORZAR_ERROR_DEMO = true;
 
         public:

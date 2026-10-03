@@ -250,18 +250,13 @@ void Renderer::creaShaderProgram (const std::string& nombreBase)
     std::string miVertexShader = leerFichero(nombreBase + "-vs.glsl");
     GLuint vs = compilarShader(GL_VERTEX_SHADER, miVertexShader, "vertex shader");
     GLuint fs = 0;
-
-    //vamos a forzar un error COMENTAR ESTO PARA LA EJECUCION
-    std::string miFragmentShader = leerFichero(nombreBase + "-fs.glsl");
-    if (FORZAR_ERROR_DEMO)
-    {
-        miFragmentShader += "\nesto_no_es_glsl_valido";
-    }
-    fs = compilarShader(GL_FRAGMENT_SHADER, miFragmentShader, "fragment shader");
-   
     try
     {
         std::string miFragmentShader = leerFichero(nombreBase + "-fs.glsl");
+        if (FORZAR_ERROR_DEMO)
+        {
+            miFragmentShader += "\nesto_no_es_glsl_valido";
+        }
         fs = compilarShader(GL_FRAGMENT_SHADER, miFragmentShader, "fragment shader");
     }
     catch (...)
