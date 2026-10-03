@@ -102,7 +102,7 @@ int main()
     PAG::GUI::getInstancia().aniadirMensaje(PAG::Renderer::getInstancia().consultarCapacidadesOpenGL());
     PAG::GUI::getInstancia().aniadirMensaje("Aplicacion PAG - Practica 2 iniciada");
 
-    try{
+    try{ //manejamos las excepcionas que encontremos en el programa
     //vamos a llamar  los shaders y su geometria desde renderer
     PAG::Renderer::getInstancia().creaShaderProgram ("shaders/pag03"); 
     PAG::Renderer::getInstancia().creaModelo ();

@@ -89,7 +89,7 @@ void Renderer::liberarRecursos ()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         if (idSP == 0 || idVAO == 0)   // si se falla al cargar shaders, no hay nada que dibujar 
         {
-            return;
+            return; //si se lanza la excepcion no llegaremos a crear el modelo
         }
         //si al crear los shaders hay algun error, creaModelo no se ejecutará por lo que idsp, idvao y idibo se quedarán sin valor
         //aunque tras las pruebas al asignarle un valor no generan un problema mayor que detenga el problema 
@@ -97,17 +97,10 @@ void Renderer::liberarRecursos ()
         glPolygonMode ( GL_FRONT_AND_BACK, GL_FILL );
         glUseProgram ( idSP ); 
 
-        //matriz para que en cada refresco se redimensione mi triangulo 
-        float sx = (_aspect > 1.0f) ? 1.0f / _aspect : 1.0f;
-        float sy = (_aspect > 1.0f) ? 1.0f : _aspect;
-
         // Matriz de escalado 4x4, apta para opengl
-        GLfloat matriz[16] = {
-            sx,   0.0f, 0.0f, 0.0f,   // columna 0
-            0.0f, sy,   0.0f, 0.0f,   // columna 1
-            0.0f, 0.0f, 1.0f, 0.0f,   // columna 2
-            0.0f, 0.0f, 0.0f, 1.0f    // columna 3
-        };
+        GLfloat matriz[16];
+        //llamamos a la funcion auxiliar de calculo
+        calcularMatrizAspecto(matriz);
         glUniformMatrix4fv(idUniformAspecto, 1, GL_FALSE, matriz); 
 
         glBindVertexArray ( idVAO ); 
@@ -122,9 +115,9 @@ void Renderer::liberarRecursos ()
     {
          glViewport(0, 0, width, height);
 
-        if (height != 0)
+        if (height != 0) //evitar dividir entre 0
         {
-            _aspect = static_cast<float>(width) / static_cast<float>(height);
+            _aspect = static_cast<float>(width) / static_cast<float>(height); //aspect se aplicará en el siguiente refrescar
         }
     }
 
@@ -159,7 +152,7 @@ void Renderer::wakeUp (WindowType t, ...)
 }
 
 
-//Ahora vamos a almacenar vertices e indices
+//Ahora vamos a almacenar vertices e indices, esto trabaja con ls CPU
 /** 
  * Método para crear el VAO para el modelo a renderizar 
  * @note No se incluye ninguna comprobación de errores 
@@ -167,12 +160,13 @@ void Renderer::wakeUp (WindowType t, ...)
  */ 
 void Renderer::creaModelo ()
 {
-    GLuint indices[] = { 0, 1, 2 };
+    GLuint indices[] = { 0, 1, 2 }; //vertices que se definen
 
     glGenVertexArrays(1, &idVAO);
     glBindVertexArray(idVAO);
 
-    // ===== VERSION A: VBOs NO entrelazados (un VBO por atributo) =====
+    // VBOs NO entrelazados (un VBO por atributo)
+    //simplementar definimos la posición de cada vertice y su color exacto
     GLfloat posiciones[] = { -.5f, -.5f, 0.0f,
                               .5f, -.5f, 0.0f,
                               .0f,  .5f, 0.0f };
@@ -192,13 +186,14 @@ void Renderer::creaModelo ()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
     glEnableVertexAttribArray(1);
 
-    /* ===== VERSION B: UN SOLO VBO ENTRELAZADO =====
+    /* UN SOLO VBO ENTRELAZADO
        Para probarla: comenta el bloque de la VERSION A de arriba y descomenta esto.
 
     GLfloat interleaved[] = { -.5f, -.5f, 0.0f,   1.0f, 0.0f, 0.0f,
                                .5f, -.5f, 0.0f,   0.0f, 1.0f, 0.0f,
                                .0f,  .5f, 0.0f,   0.0f, 0.0f, 1.0f };
-
+    //Como se ve solo hay un buffer saltando de 6 en 6 para leer el vertice completo
+    //el color se define tras los tres floats de posicion
     glGenBuffers(1, &idVBO);
     glBindBuffer(GL_ARRAY_BUFFER, idVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(interleaved), interleaved, GL_STATIC_DRAW);
@@ -220,26 +215,27 @@ void Renderer::creaModelo ()
  * @param fuente    codigo GLSL
  * @param mensaje  nombre para el mensaje de error ("vertex shader"...)
  * @throw std::runtime_error si no compila
+ * @note Aqui vamos a manejar las excepciones
  */
 GLuint Renderer::compilarShader (GLenum tipo, const std::string& fuente,
                                  const std::string& mensaje)
 {
-    GLuint id = glCreateShader(tipo);
-    const GLchar* texto = fuente.c_str();
+    GLuint id = glCreateShader(tipo); //vertex o fragment
+    const GLchar* texto = fuente.c_str(); //mensaje de error
     glShaderSource(id, 1, &texto, nullptr);
     glCompileShader(id);
 
     GLint resultado = GL_FALSE;
-    glGetShaderiv(id, GL_COMPILE_STATUS, &resultado);
-    if (resultado == GL_FALSE)
+    glGetShaderiv(id, GL_COMPILE_STATUS, &resultado); //esto pregunta si se ha compilado correctamente (por eso pasamos el status)
+    if (resultado == GL_FALSE) //si ha fallado
     {
         GLint longitud = 0;
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &longitud);
-        std::string log(static_cast<size_t>(longitud), '\0');
-        glGetShaderInfoLog(id, longitud, nullptr, &log[0]);
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &longitud); //preguntas la longitud
+        std::string log(static_cast<size_t>(longitud), '\0'); //string de ese tam
+        glGetShaderInfoLog(id, longitud, nullptr, &log[0]); //escribes el texto para el log
 
         glDeleteShader(id);   // no dejamos un shader roto en la GPU
-        throw std::runtime_error("Error al compilar el " + mensaje + ":\n" + log);
+        throw std::runtime_error("Error al compilar el " + mensaje + ":\n" + log); //lanzamos el log
     }
     return id;
 }
@@ -250,10 +246,19 @@ GLuint Renderer::compilarShader (GLenum tipo, const std::string& fuente,
  */ 
 void Renderer::creaShaderProgram (const std::string& nombreBase)
 {
+    //primero tienes que leer los shaders y almacenar vs (vertex shaders) y fs (fragment shader)
     std::string miVertexShader = leerFichero(nombreBase + "-vs.glsl");
     GLuint vs = compilarShader(GL_VERTEX_SHADER, miVertexShader, "vertex shader");
-
     GLuint fs = 0;
+
+    //vamos a forzar un error COMENTAR ESTO PARA LA EJECUCION
+    std::string miFragmentShader = leerFichero(nombreBase + "-fs.glsl");
+    if (FORZAR_ERROR_DEMO)
+    {
+        miFragmentShader += "\nesto_no_es_glsl_valido";
+    }
+    fs = compilarShader(GL_FRAGMENT_SHADER, miFragmentShader, "fragment shader");
+   
     try
     {
         std::string miFragmentShader = leerFichero(nombreBase + "-fs.glsl");
@@ -271,8 +276,8 @@ void Renderer::creaShaderProgram (const std::string& nombreBase)
     glLinkProgram(sp);
 
     GLint resultado = GL_FALSE;
-    glGetProgramiv(sp, GL_LINK_STATUS, &resultado);
-    if (resultado == GL_FALSE)
+    glGetProgramiv(sp, GL_LINK_STATUS, &resultado); //aqui comprueba si enlazan los shaders entre si
+    if (resultado == GL_FALSE) //si no se conectan entre si
     {
         GLint longitud = 0;
         glGetProgramiv(sp, GL_INFO_LOG_LENGTH, &longitud);
@@ -309,5 +314,26 @@ std::string Renderer::leerFichero (const std::string& ruta)
     std::stringstream ss;
     ss << fichero.rdbuf();
     return ss.str();
+}
+/**
+ * Calcula la matriz de escalado (column-major) que compensa la relacion
+ * de aspecto de la ventana, para que el triangulo no se deforme
+ */
+void Renderer::calcularMatrizAspecto (GLfloat* matriz) const
+{
+    float sx = (_aspect > 1.0f) ? 1.0f / _aspect : 1.0f;
+    float sy = (_aspect > 1.0f) ? 1.0f : _aspect;
+
+    GLfloat m[16] = {
+        sx,   0.0f, 0.0f, 0.0f,
+        0.0f, sy,   0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+
+    for (int i = 0; i < 16; i++)
+    {
+        matriz[i] = m[i];
+    }
 }
 }

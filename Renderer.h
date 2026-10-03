@@ -12,19 +12,26 @@ namespace PAG
             static Renderer* instancia; //patron singleton, una sola instancia suya
             float _bgColor[4]; //en este caso si tenemos rgba no rgb
             Renderer ();//constructor
-            GLuint idVS = 0;    // Identificador del vertex shader 
-            GLuint idFS = 0;    // Identificador del fragment shader 
-            GLuint idSP = 0;    // Identificador del shader program 
-            GLuint idVAO = 0;   // Identificador del vertex array object 
-            GLuint idVBO = 0;   // Identificador del vertex buffer object 
-            GLuint idIBO = 0;   // Identificador del index buffer object 
+            //necesitamos identificadores como numeros porque es lo que devuelve opengl
+            GLuint idVS = 0;    //  vertex shader 
+            GLuint idFS = 0;    //  fragment shader 
+            GLuint idSP = 0;    // shader program 
+            GLuint idVAO = 0;   // vertex array object(buffers y como leerlos)
+            GLuint idVBO = 0;   // vertex buffer object 
+            GLuint idIBO = 0;   // index buffer object 
             //para poder abrir los shaders, lo pongo privado al ser un metodo auxiliar 
             std::string leerFichero (const std::string& ruta);
             GLuint idVBOColores = 0;   // VBO de colores distinto del anterior
+            //funcion auxiliar para separar la logica de redimension 
+            void calcularMatrizAspecto (GLfloat* matriz) const;
 
-            // atributos necesarios para mantener la sproporciones del triangulo tras redimensionar
+            // atributos necesarios para mantener las proporciones del triangulo tras redimensionar
             GLint idUniformAspecto = -1;
             float _aspect = 1024.0f / 576.0f; //estas son las proporciones generales 
+
+            //atributo para forzar un error, si se ponea true no se ve el triangulo
+            static const bool FORZAR_ERROR_DEMO = true;
+
         public:
             virtual ~Renderer (); //destructor virtual, lo necesita virtual porque hereda de listener y el si va a tener destructor virtual
             static Renderer& getInstancia (); //referencia a la instancia estática
