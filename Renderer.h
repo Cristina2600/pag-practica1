@@ -3,6 +3,7 @@
 #include <string>
 #include "Listener.h" // va a heredar de listener
 
+
 namespace PAG
 {
     class Renderer : public Listener  //herencia
@@ -19,7 +20,7 @@ namespace PAG
             GLuint idIBO = 0;   // Identificador del index buffer object 
             //para poder abrir los shaders, lo pongo privado al ser un metodo auxiliar 
             std::string leerFichero (const std::string& ruta);
-
+            GLuint idVBOColores = 0;   // VBO de colores distinto del anterior
         public:
             virtual ~Renderer (); //destructor virtual, lo necesita virtual porque hereda de listener y el si va a tener destructor virtual
             static Renderer& getInstancia (); //referencia a la instancia estática
@@ -33,6 +34,8 @@ namespace PAG
             void creaModelo();
             //vamos a crear las funciones necesarias para controlar los errores
             GLuint compilarShader (GLenum tipo, const std::string& fuente, const std::string& etiqueta);
+            //funcion extra para asegurarnos de limpiar todo
+            void liberarRecursos ();
         };
 }
 

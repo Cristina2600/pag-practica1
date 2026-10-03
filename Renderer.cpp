@@ -26,32 +26,21 @@ namespace PAG
     /**
      * Destructor
      */
-    Renderer::~Renderer ()
-    {
-         if ( idVS != 0 ) 
-   {  glDeleteShader ( idVS ); 
-   } 
- 
-   if ( idFS != 0 ) 
-   {  glDeleteShader ( idFS ); 
-   } 
- 
-   if ( idSP != 0 ) 
-   {  glDeleteProgram ( idSP ); 
-   } 
- 
-   if ( idVBO != 0 ) 
-   {  glDeleteBuffers ( 1, &idVBO ); 
-   } 
- 
-   if ( idIBO != 0 ) 
-   {  glDeleteBuffers ( 1, &idIBO ); 
-   } 
- 
-   if ( idVAO != 0 ) 
-   {  glDeleteVertexArrays ( 1, &idVAO ); 
-   } 
-     }
+Renderer::~Renderer ()
+{
+    liberarRecursos();
+}
+
+void Renderer::liberarRecursos ()
+{
+    if (idVS != 0)  { glDeleteShader(idVS);          idVS = 0; }
+    if (idFS != 0)  { glDeleteShader(idFS);          idFS = 0; }
+    if (idSP != 0)  { glDeleteProgram(idSP);         idSP = 0; }
+    if (idVBO != 0) { glDeleteBuffers(1, &idVBO);    idVBO = 0; }
+    if (idIBO != 0) { glDeleteBuffers(1, &idIBO);    idIBO = 0; }
+    if (idVAO != 0) { glDeleteVertexArrays(1, &idVAO); idVAO = 0; }
+    if (idVBOColores != 0) { glDeleteBuffers(1, &idVBOColores); idVBOColores = 0; }
+}
 
     /**
      * consulta el unico objeto que hay
@@ -147,23 +136,56 @@ void Renderer::wakeUp (WindowType t, ...)
 /** 
  * Método para crear el VAO para el modelo a renderizar 
  * @note No se incluye ninguna comprobación de errores 
+ * @note ahora tendremos las dos versiones inplementadas
  */ 
-void PAG::Renderer::creaModelo ( ) 
-{  GLfloat vertices[] = { -.5, -.5, 0, //vertice 1
-                           .5, -.5, 0,  //vertice 2
-                           .0,  .5, 0 }; //vertice2
-   GLuint indices[] = { 0, 1, 2 }; 
- 
-   glGenVertexArrays ( 1, &idVAO ); 
-   glBindVertexArray ( idVAO ); 
-    glGenBuffers ( 1, &idVBO ); 
-   glBindBuffer ( GL_ARRAY_BUFFER, idVBO ); 
-   glBufferData ( GL_ARRAY_BUFFER, 9*sizeof(GLfloat), vertices, GL_STATIC_DRAW ); 
-   glVertexAttribPointer ( 0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), nullptr ); 
-   glEnableVertexAttribArray ( 0 ); 
-   glGenBuffers ( 1, &idIBO ); 
-   glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, idIBO ); 
-   glBufferData ( GL_ELEMENT_ARRAY_BUFFER, 3*sizeof(GLuint), indices, GL_STATIC_DRAW ); 
+void Renderer::creaModelo ()
+{
+    GLuint indices[] = { 0, 1, 2 };
+
+    glGenVertexArrays(1, &idVAO);
+    glBindVertexArray(idVAO);
+
+    // ===== VERSION A: VBOs NO entrelazados (un VBO por atributo) =====
+    GLfloat posiciones[] = { -.5f, -.5f, 0.0f,
+                              .5f, -.5f, 0.0f,
+                              .0f,  .5f, 0.0f };
+    GLfloat colores[]    = { 1.0f, 0.0f, 0.0f,
+                              0.0f, 1.0f, 0.0f,
+                              0.0f, 0.0f, 1.0f };
+
+    glGenBuffers(1, &idVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, idVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(posiciones), posiciones, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
+    glEnableVertexAttribArray(0);
+
+    glGenBuffers(1, &idVBOColores);
+    glBindBuffer(GL_ARRAY_BUFFER, idVBOColores);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colores), colores, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
+    glEnableVertexAttribArray(1);
+
+    /* ===== VERSION B: UN SOLO VBO ENTRELAZADO =====
+       Para probarla: comenta el bloque de la VERSION A de arriba y descomenta esto.
+
+    GLfloat interleaved[] = { -.5f, -.5f, 0.0f,   1.0f, 0.0f, 0.0f,
+                               .5f, -.5f, 0.0f,   0.0f, 1.0f, 0.0f,
+                               .0f,  .5f, 0.0f,   0.0f, 0.0f, 1.0f };
+
+    glGenBuffers(1, &idVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, idVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(interleaved), interleaved, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
+                          reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+    */
+
+    glGenBuffers(1, &idIBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idIBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * sizeof(GLuint), indices, GL_STATIC_DRAW);
 } 
 /**
  * Compila un shader y comprueba el resultado

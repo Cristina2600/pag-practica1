@@ -118,6 +118,7 @@ int main()
 
     PAG::GUI::getInstancia().aniadirMensaje("Finalizando aplicacion");
 
+    PAG::Renderer::getInstancia().liberarRecursos();
     PAG::GUI::getInstancia().liberar();
 
     glfwDestroyWindow(window);
