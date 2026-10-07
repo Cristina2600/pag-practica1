@@ -50,6 +50,9 @@ namespace PAG
         ImGuiIO& io = ImGui::GetIO(); //esto es para entradas y salidas 
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; //esto es para la navegacion por teclado 
 
+        //vamos a aplicar un cambio en la interfaz
+        aplicarEstiloMorado();
+
         ImGui_ImplGlfw_InitForOpenGL(window, true); //aqui conectamos nuestra ventana para recibir los eventos que sucedan
         ImGui_ImplOpenGL3_Init(); //shaders y buffers de opengl
     }
@@ -139,4 +142,26 @@ namespace PAG
             _listeners[i]->wakeUp(WindowType::Background, &_bgColorPicker[0]); //usamos la funcion wake up para notificarles el cambio
         }
     }
+
+//le cambiamos los colores a morado al inicializar toda la interfaz, para que se haga una sola vez
+void GUI::aplicarEstiloMorado ()
+{
+    ImGuiStyle& estilo = ImGui::GetStyle();
+    ImVec4* colores = estilo.Colors;
+
+    // Barra de titulo: morado MEDIO (ni muy oscuro ni muy claro, para que el texto negro se lea)
+    colores[ImGuiCol_TitleBg]          = ImVec4(0.62f, 0.45f, 0.75f, 1.00f);
+    colores[ImGuiCol_TitleBgActive]    = ImVec4(0.68f, 0.52f, 0.80f, 1.00f);
+    colores[ImGuiCol_TitleBgCollapsed] = ImVec4(0.62f, 0.45f, 0.75f, 0.75f);
+
+    colores[ImGuiCol_WindowBg] = ImVec4(0.88f, 0.82f, 0.94f, 1.00f);
+
+    colores[ImGuiCol_FrameBg]        = ImVec4(0.78f, 0.68f, 0.90f, 1.00f);
+    colores[ImGuiCol_FrameBgHovered] = ImVec4(0.70f, 0.58f, 0.85f, 1.00f);
+    colores[ImGuiCol_Button]         = ImVec4(0.45f, 0.20f, 0.60f, 1.00f);
+    colores[ImGuiCol_ButtonHovered]  = ImVec4(0.55f, 0.28f, 0.70f, 1.00f);
+    colores[ImGuiCol_ButtonActive]   = ImVec4(0.35f, 0.14f, 0.48f, 1.00f);
+
+    colores[ImGuiCol_Text] = ImVec4(0.10f, 0.05f, 0.15f, 1.00f);   // negro, legible en ambas zonas
+}
 }

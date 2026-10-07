@@ -42,6 +42,8 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
 
             void anadirListener (Listener* listener); //metodo para que los objetos renderer se subscriban
             void aniadirMensaje (const std::string& mensaje);
+            //cambiar color interfaz
+            void aplicarEstiloMorado ();
     };
 }
 

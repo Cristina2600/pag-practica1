@@ -30,7 +30,7 @@ namespace PAG
             float _aspect = 1024.0f / 576.0f; //estas son las proporciones generales 
 
             //atributo para forzar un error, si se ponea true no se ve el triangulo y se depura por la ventana de la interfaz
-            static const bool FORZAR_ERROR_DEMO = true;
+            static const bool FORZAR_ERROR_DEMO = false;
 
         public:
             virtual ~Renderer (); //destructor virtual, lo necesita virtual porque hereda de listener y el si va a tener destructor virtual
