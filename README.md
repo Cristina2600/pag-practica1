@@ -200,3 +200,31 @@ excepciones, reenviando el mensaje a `PAG::GUI` para
 mostrarlo en la ventana de mensajes, sin que `Renderer` necesite conocer
 dónde ni cómo se muestra ese mensaje.
 
+
+# Práctica 4: Gestionando shader programs
+
+## Cambios realizados respecto a la Práctica 3
+
+- Separamos la lógica de los shaders en `PAG::ShaderProgram` (`ShaderProgram.h/.cpp`) 
+  encapsulando todo el ciclo de vida de un shader program: 
+  leer los ficheros GLSL, compilar cada shader, enlazar el programa, activarlo,
+  comprobar si está listo y liberar los recursos.
+- Quitamos la lógica de `PAG::Renderer`, junto con los identificadores `idVS`, `idFS` e
+  `idSP` teniendo ahora solo el atributo `std::unique_ptr<ShaderProgram> _shaderProgram`
+  y lo utiliza, sin saber cómo se compila un shader.
+- `Renderer::creaShaderProgram` ahora solo cargará el shader y cuida la relación de aspecto ya definida.
+- Nueva ventana "Shader Program" en la interfaz, creada en `GUI::dibujarControles`, con una caja de
+  texto (`ImGui::InputText`) para el nombre base de los shaders y un botón "Load" (`ImGui::Button`).
+  El texto se guarda en el atributo `_nombreShader` de `GUI`.
+- Ahora al enum de WindowType añadimos el valor shaderprogram para poder manejar los distintos shaders.
+- `main.cpp` ya no indica el nombre de ningún shader en el código. Solo crea el modelo, y el
+  triángulo aparece cuando el usuario carga un shader desde la interfaz.
+
+- En esta prácticas los cambios han sido mínimos, tan solo separar la lógica de los shaders y añadir la nueva ventana con la lógica para usar distintos shaders
+
+## Diagrama de clases
+![alt text](UML-P4.png)
+
+`PAG::Renderer` sigue siendo la única clase que dibuja con OpenGL, pero ahora delega la gestión
+de los shaders en `PAG::ShaderProgram`, con la que tiene una relación de composición.
+`PAG::GUI` notifica la carga a través de `Listener`, sin conocer ni a `Renderer` ni a `ShaderProgram`.
