@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #cosas de glfw
 find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 # cosas de glad
 file(GLOB MY_FILES *.cpp)
@@ -18,6 +19,7 @@ add_executable(${PROJECT_NAME} ${MY_FILES} ${GLAD_FILES} ${IMGUI_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC GLAD/include imgui/include)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw OpenGL::GL)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw OpenGL::GL glm::glm)
 
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

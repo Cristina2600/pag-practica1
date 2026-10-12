@@ -5,6 +5,10 @@
 #include <memory>
 #include "ShaderProgram.h" // aqui estan las funciones para los shaders
 
+#include "Camera.h"
+#include "CameraMovement.h"
+#include <glm/glm.hpp>
+
 
 namespace PAG
 {
@@ -31,7 +35,12 @@ namespace PAG
             //atributo para forzar un error, si se ponea true no se ve el triangulo y se depura por la ventana de la interfaz
             static const bool FORZAR_ERROR_DEMO = false;
 
-            std::unique_ptr<ShaderProgram> _shaderProgram;
+            std::unique_ptr<ShaderProgram> _shaderProgram; //solo una instancia para diferencias los shaders
+
+            //atributos necesarios para la cámara
+            Camera _camara;                                     // el Renderer es dueño de la cámara
+            CameraMovement _movimiento = CameraMovement::Orbit; // movimiento elegido en la GUI
+            GLint idUniformMVP = -1;
 
         public:
             virtual ~Renderer (); //destructor virtual, lo necesita virtual porque hereda de listener y el si va a tener destructor virtual
@@ -47,6 +56,8 @@ namespace PAG
           
             //funcion extra para asegurarnos de limpiar todo
             void liberarRecursos ();
+
+            void moverCamara (double horizontal, double vertical);
         };
 }
 

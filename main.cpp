@@ -7,7 +7,12 @@
 
 #include "Renderer.h"
 #include "GUI.h"
-
+//voy a usar un bool para saber el estado de la cámara (moviendose o no)
+namespace
+{
+    bool   arrastrando = false;
+    double ultimoX = 0.0, ultimoY = 0.0;
+}
 //primero definimos todos los callbacks que ya no usand funciones de opengl si no las definidas en el resto de modulos
 
 void error_callback(int errno_, const char* desc)
@@ -31,6 +36,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
+     if (button == GLFW_MOUSE_BUTTON_LEFT)
+    {
+        if (action == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
+        {
+            arrastrando = true;
+            glfwGetCursorPos(window, &ultimoX, &ultimoY);   // punto de partida
+        }
+        else if (action == GLFW_RELEASE)
+        {
+            arrastrando = false;
+        }
+    }
     if (action == GLFW_PRESS)
     {
         PAG::GUI::getInstancia().aniadirMensaje("Pulsado el boton: " + std::to_string(button));
@@ -39,6 +56,17 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     {
         PAG::GUI::getInstancia().aniadirMensaje("Soltado el boton: " + std::to_string(button));
     }
+}
+void cursor_pos_callback(GLFWwindow* window, double x, double y)
+{
+    if (!arrastrando) return;
+
+    double dx = x - ultimoX;
+    double dy = y - ultimoY;
+    ultimoX = x;
+    ultimoY = y;
+
+    PAG::Renderer::getInstancia().moverCamara(dx, -dy);   // -dy: la Y de pantalla crece hacia abajo
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -91,6 +119,7 @@ int main()
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetCursorPosCallback(window, cursor_pos_callback);
 
     PAG::Renderer::getInstancia().inicializarOpenGL();
     PAG::GUI::getInstancia().inicializar(window);

@@ -12,7 +12,10 @@ namespace PAG
     enum class WindowType
     {
         Background,  //Notificacion del selector de color de fondo
-        ShaderProgram //ahora podemos decidir que shader ejecutar
+        ShaderProgram, //ahora podemos decidir que shader ejecutar
+        CameraSelect,   // el usuario eligió un tipo de movimiento
+        CameraMove,     // botón de dirección pulsado
+        CameraZoom      // slider del ángulo
     };
 }
 

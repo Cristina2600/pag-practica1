@@ -1,5 +1,6 @@
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 #include "Renderer.h"
 #include <sstream>
@@ -7,6 +8,7 @@
 //include necesario para manejar los errores 
 #include <stdexcept>
 #include <fstream>
+#include <glm/gtc/type_ptr.hpp> 
 
 namespace PAG
 {
@@ -94,9 +96,9 @@ void Renderer::liberarRecursos ()
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     _shaderProgram->activar();
 
-    GLfloat matriz[16];
-    calcularMatrizAspecto(matriz);
-    glUniformMatrix4fv(idUniformAspecto, 1, GL_FALSE, matriz);
+   
+    glm::mat4 mvp = _camara.matrizVisionProyeccion();   // M es la identidad por ahora
+    glUniformMatrix4fv(idUniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
 
     glBindVertexArray(idVAO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idIBO);
@@ -115,6 +117,7 @@ void Renderer::liberarRecursos ()
         {
             _aspect = static_cast<float>(width) / static_cast<float>(height); //aspect se aplicará en el siguiente refrescar
         }
+         _camara.setViewport(width, height);
     }
 
     /**
@@ -154,6 +157,34 @@ void Renderer::wakeUp (WindowType t, ...)
 
             creaShaderProgram("shaders/" + nombre);  // puede lanzar excepción
             break;
+        }
+        case WindowType::CameraSelect:
+        {
+            va_list args;
+            va_start(args, t);
+            int tipo = va_arg(args, int);
+            va_end(args);
+            _movimiento = static_cast<CameraMovement>(tipo);
+            break;
+        }
+        case WindowType::CameraMove:
+        {
+                va_list args;
+                va_start(args, t);
+                double h = va_arg(args, double);
+                double v = va_arg(args, double);
+                va_end(args);
+                moverCamara(h, v);
+                break;
+        }
+        case WindowType::CameraZoom:
+        {
+                va_list args;
+                va_start(args, t);
+                double grados = va_arg(args, double);
+                va_end(args);
+                _camara.setZoom(static_cast<float>(grados));
+                break;
         }
     }
 }
@@ -225,7 +256,7 @@ void Renderer::creaModelo ()
 void Renderer::creaShaderProgram (const std::string& nombreBase)
 {
     _shaderProgram->cargar(nombreBase);
-    idUniformAspecto = _shaderProgram->getUniformLocation("correccionAspecto");
+    idUniformMVP = _shaderProgram->getUniformLocation("matrizMVP");    
 }
 
 /**
@@ -247,6 +278,24 @@ void Renderer::calcularMatrizAspecto (GLfloat* matriz) const
     for (int i = 0; i < 16; i++)
     {
         matriz[i] = m[i];
+    }
+}
+
+void Renderer::moverCamara (double horizontal, double vertical)
+{
+    const float gradosPorPixel   = 0.3f;
+    const float unidadesPorPixel = 0.01f;
+    const float x = static_cast<float>(horizontal);
+    const float y = static_cast<float>(vertical);
+
+    switch (_movimiento)
+    {
+        case CameraMovement::Pan:   _camara.pan(x * gradosPorPixel);                      break;
+        case CameraMovement::Tilt:  _camara.tilt(y * gradosPorPixel);                     break;
+        case CameraMovement::Dolly: _camara.dolly(x * unidadesPorPixel, y * unidadesPorPixel); break;
+        case CameraMovement::Crane: _camara.crane(y * unidadesPorPixel);                  break;
+        case CameraMovement::Orbit: _camara.orbit(y * gradosPorPixel, x * gradosPorPixel);break;
+        case CameraMovement::Zoom:  _camara.zoom(-y * 0.2f);                              break;
     }
 }
 }

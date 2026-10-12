@@ -118,6 +118,7 @@ namespace PAG
             }
         }
         ImGui::End();
+        dibujarVentanaCamara();
     }
 
    //esto NO DIBUJA NADA solo calcula vertices y todo lo que hemos definido anteriormente, esto llama a opengl para que lo pinte
@@ -175,6 +176,7 @@ void GUI::aplicarEstiloMorado ()
     colores[ImGuiCol_TitleBg]          = ImVec4(0.62f, 0.45f, 0.75f, 1.00f);
     colores[ImGuiCol_TitleBgActive]    = ImVec4(0.68f, 0.52f, 0.80f, 1.00f);
     colores[ImGuiCol_TitleBgCollapsed] = ImVec4(0.62f, 0.45f, 0.75f, 0.75f);
+    colores[ImGuiCol_PopupBg]      = ImVec4(0.80f, 0.90f, 1.00f, 1.00f); //color del desplegable
 
     colores[ImGuiCol_WindowBg] = ImVec4(0.88f, 0.82f, 0.94f, 1.00f);
 
@@ -185,5 +187,73 @@ void GUI::aplicarEstiloMorado ()
     colores[ImGuiCol_ButtonActive]   = ImVec4(0.35f, 0.14f, 0.48f, 1.00f);
 
     colores[ImGuiCol_Text] = ImVec4(0.10f, 0.05f, 0.15f, 1.00f);   // negro, legible en ambas zonas
+}
+void GUI::notificarMovimiento (double horizontal, double vertical)
+{
+    for (size_t i = 0; i < _listeners.size(); i++)
+        _listeners[i]->wakeUp(WindowType::CameraMove, horizontal, vertical); //recorres todos los listeners para notificar los cambios en la cámara
+}
+
+void GUI::dibujarVentanaCamara ()
+{
+    ImGui::SetNextWindowPos(ImVec2(10, 300), ImGuiCond_Once);
+    if (ImGui::Begin("Camera"))
+    {
+        static const char* nombres[] = { "Zoom", "Pan", "Tilt", "Dolly", "Crane", "Orbit" };
+        ImGui::Text("Movement");
+        if (ImGui::Combo("##movimiento", &_movimiento, nombres, IM_ARRAYSIZE(nombres)))
+        {
+            for (size_t i = 0; i < _listeners.size(); i++)
+                _listeners[i]->wakeUp(WindowType::CameraSelect, _movimiento);   // int
+        }
+
+        const double P = 10.0;   // "píxeles" equivalentes por pulsación
+        ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);  // mantener pulsado repite
+
+        switch (static_cast<CameraMovement>(_movimiento))
+        {
+            case CameraMovement::Zoom:
+                ImGui::Text("Angle");
+                if (ImGui::SliderFloat("##fov", &_fovX, 10.0f, 120.0f, "%.0f"))
+                {
+                    for (size_t i = 0; i < _listeners.size(); i++)
+                        _listeners[i]->wakeUp(WindowType::CameraZoom, static_cast<double>(_fovX));
+                }
+                break;
+            case CameraMovement::Pan:
+                ImGui::Text("Direction");
+                if (ImGui::Button("<- Left"))  notificarMovimiento(-P, 0.0);
+                ImGui::SameLine();
+                if (ImGui::Button("Right ->")) notificarMovimiento( P, 0.0);
+                break;
+            case CameraMovement::Tilt:
+            case CameraMovement::Crane:
+                ImGui::Text("Direction");
+                if (ImGui::Button("^ Up ^"))   notificarMovimiento(0.0,  P);
+                ImGui::SameLine();
+                if (ImGui::Button("v Down v")) notificarMovimiento(0.0, -P);
+                break;
+            case CameraMovement::Dolly:
+                ImGui::Text("Direction");
+                if (ImGui::Button("^ Forward ^")) notificarMovimiento(0.0,  P);
+                if (ImGui::Button("<- Left"))     notificarMovimiento(-P, 0.0);
+                ImGui::SameLine();
+                if (ImGui::Button("Right ->"))    notificarMovimiento( P, 0.0);
+                if (ImGui::Button("v Back v"))    notificarMovimiento(0.0, -P);
+                break;
+            case CameraMovement::Orbit:
+                ImGui::Text("Latitude");
+                if (ImGui::Button("^ North ^")) notificarMovimiento(0.0,  P);
+                ImGui::SameLine();
+                if (ImGui::Button("v South v")) notificarMovimiento(0.0, -P);
+                ImGui::Text("Longitude");
+                if (ImGui::Button("<- West"))   notificarMovimiento(-P, 0.0);
+                ImGui::SameLine();
+                if (ImGui::Button("East ->"))   notificarMovimiento( P, 0.0);
+                break;
+        }
+        ImGui::PopItemFlag();
+    }
+    ImGui::End();
 }
 }
