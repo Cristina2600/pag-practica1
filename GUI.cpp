@@ -5,6 +5,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include "GUI.h"
+#include <imgui_stdlib.h>
 
 namespace PAG
 {
@@ -93,6 +94,27 @@ namespace PAG
             for (const std::string& m : _mensajes)  //recorremos todos los mensajes
             {
                 ImGui::TextUnformatted(m.c_str()); //aqui usamos texto sin formato por si hay algun caracter raro que pueda dar problemas
+            }
+        }
+        ImGui::End();
+        ImGui::SetNextWindowPos(ImVec2(10, 100), ImGuiCond_Once); //ventana para el manejo de los shaders
+        if (ImGui::Begin("Shader Program"))
+        {
+            ImGui::InputText("##", &_nombreShader, ImGuiInputTextFlags_AutoSelectAll);
+            if (ImGui::Button("Load")) //así se llama el boton
+            {
+                try
+                {
+                    for (size_t i = 0; i < _listeners.size(); i++)
+                    {
+                        _listeners[i]->wakeUp(WindowType::ShaderProgram, _nombreShader.c_str());
+                    }
+                    aniadirMensaje("Shader program '" + _nombreShader + "' cargado correctamente");
+                }
+                catch (const std::exception& e)
+                {
+                    aniadirMensaje(e.what());
+                }
             }
         }
         ImGui::End();

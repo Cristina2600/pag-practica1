@@ -5,6 +5,7 @@
 
 #include <vector> //vamos a necesitar un vector dinámico para almacenar a todos los listeners
 #include <string>
+#include <stdexcept>
 
 struct GLFWwindow; //forward declaration, es solo para declarar la funcion inicializar más abajo
 
@@ -30,6 +31,8 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
 
             // Notifica a todos los observadores un cambio en el color de fondo
             void AvisarListenersCambioFondo ();
+            std::string _nombreShader = "pag04";   // texto para poder manejar los shaders 
+
 
         public:
             virtual ~GUI (); //vamos a tener un destructor virtual por si luego hay clases hijas 

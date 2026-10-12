@@ -11,7 +11,8 @@ namespace PAG
      */
     enum class WindowType
     {
-        Background  //Notificacion del selector de color de fondo
+        Background,  //Notificacion del selector de color de fondo
+        ShaderProgram //ahora podemos decidir que shader ejecutar
     };
 }
 

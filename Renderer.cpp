@@ -144,6 +144,17 @@ void Renderer::wakeUp (WindowType t, ...)
             cambiarColorFondo(color[0], color[1], color[2]); //llamas a la funcion para que aplique los cambios 
             break;
         }
+        //ahora añadimos la opcion de cambiar shaders
+        case WindowType::ShaderProgram:
+        {
+            va_list args;
+            va_start(args, t);
+            std::string nombre = va_arg(args, const char*);  // copiamos antes de cerrar
+            va_end(args);
+
+            creaShaderProgram("shaders/" + nombre);  // puede lanzar excepción
+            break;
+        }
     }
 }
 
