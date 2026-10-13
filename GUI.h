@@ -37,7 +37,8 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
             int   _movimiento = static_cast<int>(CameraMovement::Orbit); // mismo valor por defecto que Renderer
             float _fovX = 60.0f;                                         // mismo valor por defecto que Camera
             void dibujarVentanaCamara ();
-                void notificarMovimiento (double horizontal, double vertical);
+            void notificarMovimiento (double horizontal, double vertical);
+            std::string _mensajePendiente;
 
 
         public:
@@ -53,6 +54,7 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
             void aniadirMensaje (const std::string& mensaje);
             //cambiar color interfaz
             void aplicarEstiloMorado ();
+            std::string recogerMensajePendiente ();
     };
 }
 

@@ -256,4 +256,10 @@ void GUI::dibujarVentanaCamara ()
     }
     ImGui::End();
 }
+std::string GUI::recogerMensajePendiente ()
+{
+    std::string m = _mensajePendiente;
+    _mensajePendiente.clear();
+    return m;
+}
 }

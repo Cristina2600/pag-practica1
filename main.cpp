@@ -146,6 +146,9 @@ int main()
         glfwPollEvents();
 
         PAG::GUI::getInstancia().dibujarControles();
+        //para los mensajes que se piden en la práctica 5
+        std::string pendiente = PAG::GUI::getInstancia().recogerMensajePendiente();
+        if (!pendiente.empty()) PAG::GUI::getInstancia().aniadirMensaje(pendiente);
 
         PAG::Renderer::getInstancia().refrescar();
 

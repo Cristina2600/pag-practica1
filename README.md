@@ -228,3 +228,74 @@ dónde ni cómo se muestra ese mensaje.
 `PAG::Renderer` sigue siendo la única clase que dibuja con OpenGL, pero ahora delega la gestión
 de los shaders en `PAG::ShaderProgram`, con la que tiene una relación de composición.
 `PAG::GUI` notifica la carga a través de `Listener`, sin conocer ni a `Renderer` ni a `ShaderProgram`.
+
+
+# Práctica 5: La cámara virtual
+
+## Cambios realizados respecto a la Práctica 4
+
+- En este caso añadiremos la biblioteca GLM, añadiendo su lectura desde CMakeLists.
+
+- Implementamos la clase `Camera` como cámara virtual, tendrá parámetros de posición, punto al que mira,
+vector up, angulo de visión horizontal, los planos z near y z far y el viewport además calcula las matrices de visión y proyección. Implementaremos los movimientos pan, tilt, dolly, crane, orbit y zoom.
+
+- Nuevo enum `CameraMovement.h` para identificar el tipo de movimiento seleccionado:
+ `Zoom, Pan, Tilt, Dolly, Crane, Orbit`.
+
+- `WindowType` tendrá 3 nuevos valores: `CameraSelect` (para elegir el tipo de movimiento),
+ `CameraMove` (se pide un movimiento en horizontal y vertical) y `CameraZoom`
+  (acercaremos o separaremos la vista de la cámara).
+- En el render ahora registraremos un atributo `Camera`, el tipo de movimiento actual
+  `_movimiento` y el identificador del uniform. En `refrescar()` calcula la matriz
+  proyección · visión, y se la envía al vertex shader con `glUniformMatrix4fv`. 
+
+- Los shaders  `pag05` usan ahora el uniform `mat4 matrizMVP` en lugar de
+  `correccionAspecto`: `gl_Position = matrizMVP * vec4(posicion, 1.0)`. Los fragment shaders no cambian.
+
+- Necesitaremos una nueva ventana **"Camera"** con un desplegable para elegir
+  el movimiento y los controles correspondientes
+
+- Movimiento de cámara con el ratón estan definidos en `main.cpp` mediante sus callbacks correspondientes
+
+- Se mantiene el funcionamiento anterior: el triángulo se sigue mostrando y la rueda del ratón
+  cambia el color de fondo.
+
+
+## Cómo funciona la cámara
+
+La cámara se declara inicialmente en la posición (0, 0, 3), mirando al origen, con `up = (0, 1, 0)`, un ángulo
+de visión horizontal de 60°, `zNear = 0.1` y `zFar = 100`. 
+
+En el vertex shader se aplica `matrizMVP = proyección · visión` (la matriz de modelo es la
+identidad por ahora, porque el triángulo no se transforma). Importa el orden: primero se aplica
+la visión y después la proyección. Los ángulos se pasan a radianes con `glm::radians`.
+
+### Movimientos
+
+| Movimiento | Qué hace | Cómo se calcula |
+|---|---|---|
+| Pan | Panorámica horizontal | Rota el punto de mira alrededor de la posición, eje `v` |
+| Tilt | Panorámica vertical | Rota el punto de mira alrededor de la posición, eje `u` |
+| Dolly | Traslación en el plano XZ | Suma el mismo desplazamiento a la posición y al punto de mira |
+| Crane | Traslación en el eje Y | Suma (0, dy, 0) a la posición y al punto de mira |
+| Orbit | Giro alrededor del punto de mira | Rota la posición respecto al punto de mira: longitud (eje Y) y latitud (eje `u`) |
+| Zoom | Acercar o alejar | No se mueve la cámara: cambia el ángulo de visión horizontal (entre 10° y 120°) |
+
+
+
+## Decisiones de diseño
+
+- **Una clase propia para la cámara**, en vez de poner los cálculos en `Renderer`, para
+  respetar la separación de código y rol que toma cada una de las clases y para que en el futuro
+  puedan existir varias cámaras.
+
+- **cámara en grados**: los métodos reciben grados y convierten a radianes internamente.
+
+## Diagrama de clases (UML, ampliación de la Práctica 4)
+
+![alt text](UML-P5.png)
+
+`PAG::Renderer` tiene una relación de composición con `PAG::Camera` (como ya la tenía con
+`PAG::ShaderProgram`) y usa el enum `CameraMovement`. `PAG::GUI` también usa `CameraMovement`
+para el desplegable, y notifica los cambios a través de `Listener` sin conocer a `Renderer` ni
+a `Camera`.
