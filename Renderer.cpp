@@ -97,7 +97,7 @@ void Renderer::liberarRecursos ()
     _shaderProgram->activar();
 
    
-    glm::mat4 mvp = _camara.matrizVisionProyeccion();   // M es la identidad por ahora
+    glm::mat4 mvp = _camara.matrizVisionProyeccion();   //usa la matriz definida en camara para usar las coordenadas en cámara dentro del clip
     glUniformMatrix4fv(idUniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
 
     glBindVertexArray(idVAO);
@@ -117,7 +117,7 @@ void Renderer::liberarRecursos ()
         {
             _aspect = static_cast<float>(width) / static_cast<float>(height); //aspect se aplicará en el siguiente refrescar
         }
-         _camara.setViewport(width, height);
+         _camara.setViewport(width, height); //ahora la cámara recalcula el aspecto 
     }
 
     /**
@@ -256,7 +256,7 @@ void Renderer::creaModelo ()
 void Renderer::creaShaderProgram (const std::string& nombreBase)
 {
     _shaderProgram->cargar(nombreBase);
-    idUniformMVP = _shaderProgram->getUniformLocation("matrizMVP");    
+    idUniformMVP = _shaderProgram->getUniformLocation("matrizMVP");    //busca los shaders con este tipo de matriz  
 }
 
 /**

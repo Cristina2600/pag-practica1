@@ -16,7 +16,7 @@ namespace PAG
             glm::mat4 R = glm::rotate(glm::mat4(1.0f), glm::radians(grados), eje);
             return glm::vec3(R * glm::vec4(v, 0.0f));   // w = 0: es un vector, no un punto
         }
-//es para marcar los limites
+//es para marcar los limites, es decir para saber si se pasa del límite por arriba o por abajo, si estuviese completamente en vertical al normalizar da error
         bool cercaDelPolo (const glm::vec3& direccion, const glm::vec3& up)
         {
             return std::abs(glm::dot(glm::normalize(direccion), glm::normalize(up))) > LIMITE_POLO;
@@ -27,23 +27,25 @@ namespace PAG
         : _posicion(0.0f, 0.0f, 3.0f), _puntoMira(0.0f, 0.0f, 0.0f), _up(0.0f, 1.0f, 0.0f),
           _fovX(glm::radians(60.0f)), _zNear(0.1f), _zFar(100.0f), _ancho(1024), _alto(576)
     { }
-
+//vector normal es el que apunta hacia atras , opengl apunta ahcia atrás
     glm::vec3 Camera::vectorN () const { return glm::normalize(_posicion - _puntoMira);} //funciones para normalizar o productos
+//vector que apunta a la derecha   
     glm::vec3 Camera::vectorU () const { return glm::normalize(glm::cross(_up, vectorN())); }
+    //vector que apunta hacia arriba 
     glm::vec3 Camera::vectorV () const { return glm::cross(vectorN(), vectorU()); }
-
+//matriz que pasa de las coordenadas del mundo a la cámara 
     glm::mat4 Camera::matrizVision () const
     {
         return glm::lookAt(_posicion, _puntoMira, _up);
     }
-//las funciones a partir de aqui son para definir las matrices de cambios
+//coordenadas en cámara dentro del clip, recorte, aplicando perspectiva con los planos znear y zfar
     glm::mat4 Camera::matrizProyeccion () const
     {
         float aspecto = static_cast<float>(_ancho) / static_cast<float>(_alto);
         float fovY = 2.0f * std::atan(std::tan(_fovX / 2.0f) / aspecto);
         return glm::perspective(fovY, aspecto, _zNear, _zFar);
     }
-
+//juntamos la sdos para hacerlo todo en un paso 
     glm::mat4 Camera::matrizVisionProyeccion () const
     {
         return matrizProyeccion() * matrizVision();   // el orden importa: P · V
