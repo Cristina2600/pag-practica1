@@ -135,6 +135,8 @@ int main()
         
     PAG::Renderer::getInstancia().creaModelo ();    
     PAG::GUI::getInstancia().aniadirMensaje("Shaders y modelo creados correctamente");
+    PAG::Renderer::getInstancia().creaTriangulo();
+    
 
     }catch (const std::exception& e){
     PAG::GUI::getInstancia().aniadirMensaje(e.what());

@@ -36,10 +36,7 @@ Renderer::~Renderer ()
 
 void Renderer::liberarRecursos ()
 {
-    if (idVBO != 0)         { glDeleteBuffers(1, &idVBO);         idVBO = 0; }
-    if (idVBOColores != 0)  { glDeleteBuffers(1, &idVBOColores);  idVBOColores = 0; }
-    if (idIBO != 0)         { glDeleteBuffers(1, &idIBO);         idIBO = 0; }
-    if (idVAO != 0)         { glDeleteVertexArrays(1, &idVAO);    idVAO = 0; }
+    _modelos.clear(); //limpias el buffer que estamos cargandp
     // El ShaderProgram se libera solo, via su propio destructor (unique_ptr)
 }
     /**
@@ -82,29 +79,29 @@ void Renderer::liberarRecursos ()
     }
 
     /**
-     * Método para hacer el refresco de la escena
+     * Refresco de la escena. Se realizan varias cosas a la vez activa el shader, calcula
+     * P*V una sola vez y, para cada modelo, envia P*V*M y le pide que se dibuje.
      */
     void Renderer::refrescar ()
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    if (!_shaderProgram->estaCargado() || idVAO == 0)
     {
-        return;
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //limpiamos el buffer de color
+ 
+        if (!_shaderProgram->estaCargado())
+        {
+            return;
+        }
+ 
+        _shaderProgram->activar();   // el programa debe estar activo ANTES de enviar uniforms
+ 
+        const glm::mat4 vp = _camara.matrizVisionProyeccion();
+ 
+        for (const std::unique_ptr<Model>& m : _modelos)
+        {
+            const glm::mat4 mvp = vp * m->getMatrizModelado();
+            glUniformMatrix4fv(idUniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+            m->dibujar();
+        }
     }
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    _shaderProgram->activar();
-
-   
-    glm::mat4 mvp = _camara.matrizVisionProyeccion();   //usa la matriz definida en camara para usar las coordenadas en cámara dentro del clip
-    glUniformMatrix4fv(idUniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
-
-    glBindVertexArray(idVAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idIBO);
-    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
-}
-
     /**
      * Ajusta el viewport cuando cambia el tamaño de la ventana
      * @note Ahora hemos añadido una proporcion del aspecto para que aunque cambie la pantalla siemore se mantenga en valores proporcionales  
@@ -115,9 +112,9 @@ void Renderer::liberarRecursos ()
 
         if (height != 0) //evitar dividir entre 0
         {
-            _aspect = static_cast<float>(width) / static_cast<float>(height); //aspect se aplicará en el siguiente refrescar
+             _camara.setViewport(width, height); //ahora la cámara recalcula el aspecto 
+
         }
-         _camara.setViewport(width, height); //ahora la cámara recalcula el aspecto 
     }
 
     /**
@@ -198,56 +195,8 @@ void Renderer::wakeUp (WindowType t, ...)
  */ 
 void Renderer::creaModelo ()
 {
-    GLuint indices[] = { 0, 1, 2 }; //vertices que se definen
-
-    glGenVertexArrays(1, &idVAO);
-    glBindVertexArray(idVAO);
-
-    // VBOs NO entrelazados (un VBO por atributo)
-    //simplementar definimos la posición de cada vertice y su color exacto
-    GLfloat posiciones[] = { -.5f, -.5f, 0.0f,
-                              .5f, -.5f, 0.0f,
-                              .0f,  .5f, 0.0f };
-    GLfloat colores[]    = { 1.0f, 0.0f, 0.0f,
-                              0.0f, 1.0f, 0.0f,
-                              0.0f, 0.0f, 1.0f };
-
-    glGenBuffers(1, &idVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, idVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(posiciones), posiciones, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
-    glEnableVertexAttribArray(0);
-
-    glGenBuffers(1, &idVBOColores);
-    glBindBuffer(GL_ARRAY_BUFFER, idVBOColores);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colores), colores, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
-    glEnableVertexAttribArray(1);
-
-    /* UN SOLO VBO ENTRELAZADO
-       Para probarla: comenta el bloque de la VERSION A de arriba y descomenta esto.
-
-    GLfloat interleaved[] = { -.5f, -.5f, 0.0f,   1.0f, 0.0f, 0.0f,
-                               .5f, -.5f, 0.0f,   0.0f, 1.0f, 0.0f,
-                               .0f,  .5f, 0.0f,   0.0f, 0.0f, 1.0f };
-    //Como se ve solo hay un buffer saltando de 6 en 6 para leer el vertice completo
-    //el color se define tras los tres floats de posicion
-    glGenBuffers(1, &idVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, idVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(interleaved), interleaved, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
-                          reinterpret_cast<void*>(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(1);
-    */
-
-    glGenBuffers(1, &idIBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idIBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * sizeof(GLuint), indices, GL_STATIC_DRAW);
-} 
-
+cargaModelo("models/vaca.obj");
+}
 //esto solo aplica color al fragmento sin ningun cálculo de la geometría
 /** 
  * Método para crear, compilar y enlazar el shader program 
@@ -259,27 +208,7 @@ void Renderer::creaShaderProgram (const std::string& nombreBase)
     idUniformMVP = _shaderProgram->getUniformLocation("matrizMVP");    //busca los shaders con este tipo de matriz  
 }
 
-/**
- * Calcula la matriz de escalado (column-major) que compensa la relacion
- * de aspecto de la ventana, para que el triangulo no se deforme
- */
-void Renderer::calcularMatrizAspecto (GLfloat* matriz) const
-{
-    float sx = (_aspect > 1.0f) ? 1.0f / _aspect : 1.0f;
-    float sy = (_aspect > 1.0f) ? 1.0f : _aspect;
 
-    GLfloat m[16] = {
-        sx,   0.0f, 0.0f, 0.0f,
-        0.0f, sy,   0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-    for (int i = 0; i < 16; i++)
-    {
-        matriz[i] = m[i];
-    }
-}
 
 void Renderer::moverCamara (double horizontal, double vertical)
 {
@@ -297,5 +226,103 @@ void Renderer::moverCamara (double horizontal, double vertical)
         case CameraMovement::Orbit: _camara.orbit(y * gradosPorPixel, x * gradosPorPixel);break;
         case CameraMovement::Zoom:  _camara.zoom(-y * 0.2f);                              break;
     }
+}
+
+    // ------------------------------------------------------------------
+    // Modelos
+    // ------------------------------------------------------------------
+ 
+    /**
+     * Reparte los modelos en una rejilla para que no se solapen. Se usa un
+     * contador creciente para que, al eliminar un
+     * modelo, el siguiente no caiga encima de otro que sigue en la escena.
+     * Cambia ESPACIADO si tus modelos son mas grandes o mas pequenos.
+     */
+    glm::vec3 Renderer::siguientePosicion ()
+    {
+        const float ESPACIADO = 1.2f; //separación entre los modelos
+        const float columnas[3] = { 0.0f, 1.0f, -1.0f };   // centro, derecha, izquierda
+ 
+        const int n = _huecosUsados++;
+        return glm::vec3(columnas[n % 3] * ESPACIADO, -(n / 3) * ESPACIADO, 0.0f);
+    }
+ 
+    Model& Renderer::modelo (int indice)
+    {
+        if (indice < 0 || indice >= static_cast<int>(_modelos.size()))
+        {
+            throw std::out_of_range("Indice de modelo fuera de rango: " + std::to_string(indice));
+        }
+        return *_modelos[indice];
+    }
+ 
+    const Model& Renderer::modelo (int indice) const
+    {
+        if (indice < 0 || indice >= static_cast<int>(_modelos.size()))
+        {
+            throw std::out_of_range("Indice de modelo fuera de rango: " + std::to_string(indice));
+        }
+        return *_modelos[indice];
+    }
+ 
+
+ 
+    /**
+     * Carga un OBJ y lo anade a la escena. Si Model::cargarOBJ lanza una excepcion,
+     * el modelo local se destruye y NO se anade nada (el vector queda intacto).
+     */
+    void Renderer::cargaModelo (const std::string& ruta)
+    {
+        std::unique_ptr<Model> m = std::make_unique<Model>();
+        m->cargarOBJ(ruta);
+ 
+        // Nombre = nombre del fichero sin la carpeta
+        const size_t separador = ruta.find_last_of("/\\");
+        m->setNombre(separador == std::string::npos ? ruta : ruta.substr(separador + 1));
+ 
+        Transformacion t;
+        t.posicion = siguientePosicion();
+        m->setTransformacion(t);
+ 
+        _modelos.push_back(std::move(m));
+    }
+ 
+    void Renderer::eliminaModelo (int indice)
+    {
+        modelo(indice);  // solo para validar el indice (lanza std::out_of_range)
+        _modelos.erase(_modelos.begin() + indice);
+    }
+ 
+    void Renderer::transformaModelo (int indice, const Transformacion& t)
+    {
+        modelo(indice).setTransformacion(t);
+    }
+ 
+    int Renderer::numModelos () const
+    {
+        return static_cast<int>(_modelos.size());
+    }
+ 
+    std::string Renderer::nombreModelo (int indice) const
+    {
+        return modelo(indice).getNombre();
+    }
+ 
+    Transformacion Renderer::transformacionModelo (int indice) const
+    {
+        return modelo(indice).getTransformacion();
+    }
+ //método para seguir manteniendo el triangulo
+void Renderer::creaTriangulo ()
+{
+    std::unique_ptr<Model> m = std::make_unique<Model>();
+    m->crearTriangulo();
+    m->setNombre("Triangulo");
+
+    Transformacion t;
+    t.posicion = siguientePosicion();
+    m->setTransformacion(t);
+
+    _modelos.push_back(std::move(m));
 }
 }
