@@ -15,7 +15,10 @@ namespace PAG
         ShaderProgram, //ahora podemos decidir que shader ejecutar
         CameraSelect,   // el usuario eligió un tipo de movimiento
         CameraMove,     // botón de dirección pulsado
-        CameraZoom      // slider del ángulo
+        CameraZoom,     // slider del ángulo
+        //atributos para poder tener varios modelos en la escena
+        ModelLoad,     // ruta para los modelos
+        ModelDelete    // int indice
     };
 }
 

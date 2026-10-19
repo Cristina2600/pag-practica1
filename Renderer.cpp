@@ -183,6 +183,25 @@ void Renderer::wakeUp (WindowType t, ...)
                 _camara.setZoom(static_cast<float>(grados));
                 break;
         }
+        //casos para tener varios tipos de modelos
+        case WindowType::ModelLoad: //aqui cargamos los modelos recorriendo la ruta
+        {
+            va_list args;
+            va_start(args, t);
+            std::string ruta = va_arg(args, const char*);   // copiamos antes de cerrar la lista
+            va_end(args); //hay que cerrar la lista antes de cargar los modelos 
+            cargaModelo(ruta);                               // puede lanzar excepcion
+            break;
+        }
+        case WindowType::ModelDelete: //eliminamos los modelos recorriendo sus indices 
+        {
+            va_list args;
+            va_start(args, t);
+            int indice = va_arg(args, int);
+            va_end(args);
+            eliminaModelo(indice);                           // lanza out_of_range si el indice no vale
+            break;
+        }   
     }
 }
 
@@ -195,7 +214,7 @@ void Renderer::wakeUp (WindowType t, ...)
  */ 
 void Renderer::creaModelo ()
 {
-cargaModelo("models/vaca.obj");
+cargaModelo("models/pokemon_sylveon.obj");
 }
 //esto solo aplica color al fragmento sin ningun cálculo de la geometría
 /** 

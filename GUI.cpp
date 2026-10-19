@@ -119,6 +119,7 @@ namespace PAG
         }
         ImGui::End();
         dibujarVentanaCamara();
+        _ventanaModelos.dibujar();
     }
 
    //esto NO DIBUJA NADA solo calcula vertices y todo lo que hemos definido anteriormente, esto llama a opengl para que lo pinte
@@ -145,6 +146,7 @@ namespace PAG
     void GUI::anadirListener (Listener* listener)
     {
         _listeners.push_back(listener); //funciones de los vectores dinámicos
+         _ventanaModelos.addListener(listener); //aqui añadimos los listeners de los modelos obj 
     }
 
     /**
