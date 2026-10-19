@@ -120,6 +120,7 @@ namespace PAG
         ImGui::End();
         dibujarVentanaCamara();
         _ventanaModelos.dibujar();
+        _ventanaTransformaciones.dibujar();
     }
 
    //esto NO DIBUJA NADA solo calcula vertices y todo lo que hemos definido anteriormente, esto llama a opengl para que lo pinte
@@ -147,6 +148,7 @@ namespace PAG
     {
         _listeners.push_back(listener); //funciones de los vectores dinámicos
          _ventanaModelos.addListener(listener); //aqui añadimos los listeners de los modelos obj 
+         _ventanaTransformaciones.addListener(listener);  //registramos los listeners para amnejar lo cambios en transformaciones 
     }
 
     /**

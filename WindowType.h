@@ -18,7 +18,9 @@ namespace PAG
         CameraZoom,     // slider del ángulo
         //atributos para poder tener varios modelos en la escena
         ModelLoad,     // ruta para los modelos
-        ModelDelete    // int indice
+        ModelDelete,    // int indice
+        //atributos para colocar distintos modelos en la rejilla
+        ModelTransform   // int indice + 9 double (posicion, rotacion, escala)
     };
 }
 

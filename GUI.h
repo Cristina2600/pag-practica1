@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include "CameraMovement.h"
 #include "ModelWindow.h"
+#include "TransformWindow.h"
 
 struct GLFWwindow; //forward declaration, es solo para declarar la funcion inicializar más abajo
 
@@ -42,6 +43,8 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
             std::string _mensajePendiente;
             //para mostrar por pantalla la nueva ventana de los modelos
             ModelWindow _ventanaModelos;
+            //ahora mostraremos la ventana para elegir las transformaciones
+            TransformWindow _ventanaTransformaciones;
 
 
         public:

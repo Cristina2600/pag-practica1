@@ -202,6 +202,25 @@ void Renderer::wakeUp (WindowType t, ...)
             eliminaModelo(indice);                           // lanza out_of_range si el indice no vale
             break;
         }   
+        case WindowType::ModelTransform:
+        {
+            va_list args;
+            va_start(args, t); //primero lees toca la lista 
+            int indice = va_arg(args, int);
+            Transformacion tr;
+            tr.posicion.x = static_cast<float>(va_arg(args, double));
+            tr.posicion.y = static_cast<float>(va_arg(args, double));
+            tr.posicion.z = static_cast<float>(va_arg(args, double));
+            tr.rotacion.x = static_cast<float>(va_arg(args, double));
+            tr.rotacion.y = static_cast<float>(va_arg(args, double));
+            tr.rotacion.z = static_cast<float>(va_arg(args, double));
+            tr.escala.x   = static_cast<float>(va_arg(args, double));
+            tr.escala.y   = static_cast<float>(va_arg(args, double));
+            tr.escala.z   = static_cast<float>(va_arg(args, double));
+            va_end(args); //cierras la lista antes de ejecutar nada 
+            transformaModelo(indice, tr);   // lanza out_of_range si el indice no vale
+            break;
+        }
     }
 }
 
