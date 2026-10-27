@@ -131,11 +131,18 @@ int main()
     PAG::GUI::getInstancia().aniadirMensaje(PAG::Renderer::getInstancia().consultarCapacidadesOpenGL());
     PAG::GUI::getInstancia().aniadirMensaje("Aplicacion PAG - Practica 2 iniciada");
 
+     try{ //manejamos las excepcionas que encontremos en el programa
+            PAG::Renderer::getInstancia().creaTriangulo();
+            
+    }catch (const std::exception& e){
+    PAG::GUI::getInstancia().aniadirMensaje(e.what());
+    }
+    
     try{ //manejamos las excepcionas que encontremos en el programa
         
     PAG::Renderer::getInstancia().creaModelo ();    
     PAG::GUI::getInstancia().aniadirMensaje("Shaders y modelo creados correctamente");
-    PAG::Renderer::getInstancia().creaTriangulo();
+   
     
 
     }catch (const std::exception& e){

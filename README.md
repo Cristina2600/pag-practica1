@@ -299,3 +299,55 @@ la visión y después la proyección. Los ángulos se pasan a radianes con `glm:
 `PAG::ShaderProgram`) y usa el enum `CameraMovement`. `PAG::GUI` también usa `CameraMovement`
 para el desplegable, y notifica los cambios a través de `Listener` sin conocer a `Renderer` ni
 a `Camera`.
+
+# Práctica 6: Gestionando modelos 3D
+
+## Cambios realizados respecto a la Práctica 5
+
+- Hemos creado la clase `Model`: cada modelo tendrá su geometría (posiciones y colores),
+  sus indices, su propio VAO con sus VBOs e IBO, y su transformación de modelado.
+  Es quien crea, dibuja y libera sus recursos en la GPU que salen de `Renderer`, que ya no sabe nada de la geometría.
+
+- Nueva estructura `Transformacion` con `posicion`, `rotacion` (grados) y `escala`.
+  La matriz de modelado se calcula en `Model::actualizarMatrizModelado` como `M = T · Rx · Ry · Rz · S`.
+
+- Carga de ficheros OBJ con Assimp (`Model::cargarOBJ`).
+  Se recorre el árbol de nodos (`procesarNodo`) y todas las mallas del modelo se concatenan en
+  un único VAO (`procesarMalla`), desplazando los índices de cada malla tantos vértices como
+  hubiera ya acumulados.
+
+- Como todavía no hay luces, el color de cada vértice se calcula a partir de su normal
+ y los OBJ se dibujan como un alambre (`glPolygonMode(GL_LINE)`).
+
+- `Renderer` ahora tendrá un vector de modelos activando el shader en refrescar,
+  para calcular `P·V` una sola vez y, para cada modelo, envía `P·V·M` al uniform
+  `matrizMVP`
+
+- Colocamos los modelos sin que se solapen: `siguientePosicion` los reparte
+  en una rejilla de 3 columnas (centro, derecha, izquierda) con un contador creciente
+  (`_huecosUsados`), de forma que al eliminar un modelo el siguiente no cae sobre otro que ya exista.
+
+- Dos ventanas nuevas de ImGui, cada una en su clase`:
+  - `ModelWindow` : botón que abre el selector de ficheros, lista de modelos y botón de eliminar.
+  - `TransformWindow` ("Transformaciones"): combo para elegir modelo y controles
+    de traslación, rotación y escala, con un botón para reiniciar rotación y escala.
+
+- `WindowType` añade tres nuevos valores: `ModelLoad`, `ModelDelete` y `ModelTransform`.
+  `GUI::anadirListener` reenvía el listener a las dos ventanas nuevas.
+
+- Gestión de errores: `Model::cargarOBJ` lanza `std::runtime_error` si Assimp falla o el modelo
+  no tiene triángulos, `Renderer::cargaModelo`
+
+## Decisiones de diseño
+
+- Cada modelo tiene su propio VAO definido por el Model y al llamar al destructor esto es lo que primero se borra y luego los buffers, porque el VAO no borra los buffers.
+
+- Usamos `unique_ptr<Model>` en el vector: evitando así copias del modelo que pueda causar problemas 
+  con los identificadores y hace que `erase` destruya el modelo y libere su memoria de vídeo automáticamente.
+
+## Diagrama de clases (UML, ampliación de la Práctica 5)
+
+![alt text](<UML-P6 (2).png>)
+
+
+
