@@ -21,7 +21,8 @@ namespace PAG
         ModelDelete,    // int indice
         //atributos para colocar distintos modelos en la rejilla
         ModelTransform,  // int indice + 9 double (posicion, rotacion, escala)
-        ModelMaterial // esto asignará el material de cada modelo
+        ModelMaterial, // esto asignará el material de cada modelo
+        RenderMode //int para definir si es un alambre o es un sólido
     };
 }
 

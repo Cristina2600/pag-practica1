@@ -133,7 +133,7 @@ namespace PAG
         std::vector<GLuint> indices     = { 0, 1, 2 };
 
         crearBuffers(posiciones, colores, indices);
-        _alambre = false;
+       
     }
 
     void Model::cargarOBJ (const std::string& ruta)
@@ -159,7 +159,6 @@ namespace PAG
 
         // Solo si todo ha ido bien se tocan los recursos OpenGL del modelo
         crearBuffers(posiciones, colores, indices);
-        _alambre = true;  // sin luces, la malla de alambre se aprecia mejor
     }
 
     /**
@@ -172,7 +171,6 @@ namespace PAG
         {
             return;
         }
-        glPolygonMode(GL_FRONT_AND_BACK, _alambre ? GL_LINE : GL_FILL);
         glBindVertexArray(idVAO);
         glDrawElements(GL_TRIANGLES, _numIndices, GL_UNSIGNED_INT, nullptr);
     }

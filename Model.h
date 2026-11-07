@@ -40,8 +40,7 @@ namespace PAG
             std::string _nombre = "Modelo";
             Transformacion _transformacion;
             glm::mat4 _modelado = glm::mat4(1.0f);
-            //esto es para dibujar en la malla 
-            bool _alambre = false;
+            
 
             void crearBuffers (const std::vector<GLfloat>& posiciones,
                                const std::vector<GLfloat>& colores,

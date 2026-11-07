@@ -122,6 +122,7 @@ namespace PAG
         _ventanaModelos.dibujar();
         _ventanaTransformaciones.dibujar();
         _ventanaMaterial.dibujar();
+        dibujarVentanaVisualizacion();
 
         
     }
@@ -269,5 +270,28 @@ std::string GUI::recogerMensajePendiente ()
     std::string m = _mensajePendiente;
     _mensajePendiente.clear();
     return m;
+}
+
+void GUI::dibujarVentanaVisualizacion ()
+{
+    ImGui::SetNextWindowPos(ImVec2(10, 480), ImGuiCond_Once);
+    if (ImGui::Begin("Visualizacion"))
+    {
+        bool cambiado = false;
+        cambiado |= ImGui::RadioButton("Alambre", &_modoVisualizacion,
+                                       static_cast<int>(ModoVisualizacion::Alambre));
+        ImGui::SameLine();
+        cambiado |= ImGui::RadioButton("Solido", &_modoVisualizacion,
+                                       static_cast<int>(ModoVisualizacion::Solido));
+
+        if (cambiado)
+        {
+            for (size_t i = 0; i < _listeners.size(); i++)
+            {
+                _listeners[i]->wakeUp(WindowType::RenderMode, _modoVisualizacion);
+            }
+        }
+    }
+    ImGui::End();
 }
 }

@@ -113,4 +113,14 @@ namespace PAG
         if (idFS != 0) { glDeleteShader(idFS);  idFS = 0; }
         if (idSP != 0) { glDeleteProgram(idSP); idSP = 0; }
     }
+    bool ShaderProgram::activarSubrutina (GLenum tipoShader, const std::string& nombre) const
+    {
+        GLuint indice = glGetSubroutineIndex(idSP, tipoShader, nombre.c_str());
+        if (indice == GL_INVALID_INDEX)
+        {
+            return false;   // p.ej. pag05, que no tiene subrutinas
+        }
+        glUniformSubroutinesuiv(tipoShader, 1, &indice);
+        return true;
+    }
 }

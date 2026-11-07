@@ -10,6 +10,7 @@
 #include "ModelWindow.h"
 #include "TransformWindow.h"
 #include "MaterialWindow.h"
+#include "ModeloVisualizacion.h"
 struct GLFWwindow; //forward declaration, es solo para declarar la funcion inicializar más abajo
 
 #include "Listener.h" //vamos a necesitar un vector de objetos que escuchen los cambios 
@@ -34,7 +35,7 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
 
             // Notifica a todos los observadores un cambio en el color de fondo
             void AvisarListenersCambioFondo ();
-            std::string _nombreShader = "pag05";   // texto para poder manejar los shaders 
+            std::string _nombreShader = "pag07";   // texto para poder manejar los shaders 
             //atributos privados para la cámara y sus movimientos
             int   _movimiento = static_cast<int>(CameraMovement::Orbit); // mismo valor por defecto que Renderer
             float _fovX = 60.0f;                                         // mismo valor por defecto que Camera
@@ -47,6 +48,9 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
             TransformWindow _ventanaTransformaciones;
             //esto será para la ventana que nos dejará elegir los materiales 
             MaterialWindow _ventanaMaterial; 
+            //el modo de visualizacion tendrá dos enteros, por defecto solido
+             int _modoVisualizacion = static_cast<int>(ModoVisualizacion::Solido);   
+            void dibujarVentanaVisualizacion ();                                    
 
 
         public:

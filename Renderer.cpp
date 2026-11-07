@@ -91,7 +91,14 @@ void Renderer::liberarRecursos ()
             return;
         }
  
-        _shaderProgram->activar();   // el programa debe estar activo ANTES de enviar uniforms
+        _shaderProgram->activar();   // el programa debe estar activo ANTES de enviar uniforms y antes de subrutinas
+
+        // Modo de visualizacion: estado global, una vez por fotograma
+        const bool alambre = (_modo == ModoVisualizacion::Alambre);
+        glPolygonMode(GL_FRONT_AND_BACK, alambre ? GL_LINE : GL_FILL);
+        _shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER,
+                                         alambre ? "colorAlambre" : "colorSolido");
+
  
         const glm::mat4 vp = _camara.matrizVisionProyeccion();
  
@@ -239,6 +246,15 @@ void Renderer::wakeUp (WindowType t, ...)
             asignaMaterial(indice, m);
             break;
         }
+        case WindowType::RenderMode: //render segun sea alambre o solido
+        {
+            va_list args;
+            va_start(args, t);
+            int modo = va_arg(args, int);
+            va_end(args);
+            cambiaModoVisualizacion(static_cast<ModoVisualizacion>(modo));
+            break;
+        }
     }
 }
 
@@ -262,6 +278,7 @@ void Renderer::creaShaderProgram (const std::string& nombreBase)
 {
     _shaderProgram->cargar(nombreBase);
     idUniformMVP = _shaderProgram->getUniformLocation("matrizMVP");    //busca los shaders con este tipo de matriz  
+     idUniformColorDifuso = _shaderProgram->getUniformLocation("uColorDifuso");
 }
 
 
@@ -284,10 +301,7 @@ void Renderer::moverCamara (double horizontal, double vertical)
     }
 }
 
-    // ------------------------------------------------------------------
-    // Modelos
-    // ------------------------------------------------------------------
- 
+
     /**
      * Reparte los modelos en una rejilla para que no se solapen. Se usa un
      * contador creciente para que, al eliminar un
@@ -390,5 +404,15 @@ void Renderer::creaTriangulo ()
     Material Renderer::materialModelo (int indice) const
     {
         return modelo(indice).getMaterial();
+    }
+
+    void Renderer::cambiaModoVisualizacion (ModoVisualizacion m)
+    {
+        _modo = m;
+    }
+
+    ModoVisualizacion Renderer::modoVisualizacion () const
+    {
+        return _modo;
     }
 }

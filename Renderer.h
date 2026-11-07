@@ -7,6 +7,7 @@
 #include "Model.h"
 #include "Camera.h"
 #include "CameraMovement.h"
+#include "ModeloVisualizacion.h"
 #include <glm/glm.hpp>
 #include <vector>
 
@@ -30,6 +31,9 @@ namespace PAG
             Camera _camara;                                     // el Renderer es dueño de la cámara
             CameraMovement _movimiento = CameraMovement::Orbit; // movimiento elegido en la GUI
             GLint idUniformMVP = -1;
+            //para definir el valor de color difuso
+             GLint idUniformColorDifuso = -1;                       
+            ModoVisualizacion _modo = ModoVisualizacion::Solido;   
 
             glm::vec3 siguientePosicion ();
             Model& modelo (int indice);
@@ -68,6 +72,9 @@ namespace PAG
             //aqui lo que hacemos es darle otros materiales al modelo
             void asignaMaterial (int indice, const Material& m);
             Material materialModelo (int indice) const;
+            //necesitamos metodos para responder ante el cambio de alambre y solido
+            void cambiaModoVisualizacion (ModoVisualizacion m);   
+            ModoVisualizacion modoVisualizacion () const;          
         };
 }
 

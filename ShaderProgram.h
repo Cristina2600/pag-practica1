@@ -39,6 +39,10 @@ namespace PAG
             /// Ubicacion de un uniform dentro de este programa
             GLint getUniformLocation (const std::string& nombre) const;
 
+            
+            //pasando el nombre de la subrutina, activamoms su implementacion
+            bool activarSubrutina (GLenum tipoShader, const std::string& nombre) const;
+
             bool estaCargado () const;
 
             /// Libera los recursos OpenGL (shaders y programa)
