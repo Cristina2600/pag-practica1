@@ -20,7 +20,8 @@ namespace PAG
         ModelLoad,     // ruta para los modelos
         ModelDelete,    // int indice
         //atributos para colocar distintos modelos en la rejilla
-        ModelTransform   // int indice + 9 double (posicion, rotacion, escala)
+        ModelTransform,  // int indice + 9 double (posicion, rotacion, escala)
+        ModelMaterial // esto asignará el material de cada modelo
     };
 }
 

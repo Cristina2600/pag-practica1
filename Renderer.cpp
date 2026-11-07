@@ -221,6 +221,24 @@ void Renderer::wakeUp (WindowType t, ...)
             transformaModelo(indice, tr);   // lanza out_of_range si el indice no vale
             break;
         }
+        //asignamos todas las luces que definen el material
+        case WindowType::ModelMaterial:
+        {
+            va_list args;
+            va_start(args, t);
+            int indice     = va_arg(args, int);
+            float* amb     = va_arg(args, float*);
+            float* dif     = va_arg(args, float*);
+            float* esp     = va_arg(args, float*);
+            double exp     = va_arg(args, double);
+            Material m(glm::vec3(amb[0], amb[1], amb[2]),
+                    glm::vec3(dif[0], dif[1], dif[2]),
+                    glm::vec3(esp[0], esp[1], esp[2]),
+                    static_cast<float>(exp));
+            va_end(args);
+            asignaMaterial(indice, m);
+            break;
+        }
     }
 }
 
@@ -280,7 +298,7 @@ void Renderer::moverCamara (double horizontal, double vertical)
     {
         const float ESPACIADO = 1.2f; //separación entre los modelos
         const float columnas[3] = { 0.0f, 1.0f, -1.0f };   // centro, derecha, izquierda
- 
+
         const int n = _huecosUsados++;
         return glm::vec3(columnas[n % 3] * ESPACIADO, -(n / 3) * ESPACIADO, 0.0f);
     }
@@ -363,4 +381,14 @@ void Renderer::creaTriangulo ()
 
     _modelos.push_back(std::move(m));
 }
+
+    void Renderer::asignaMaterial (int indice, const Material& m)
+    {
+        modelo(indice).setMaterial(m);   // lanza out_of_range si el índice no vale
+    }
+
+    Material Renderer::materialModelo (int indice) const
+    {
+        return modelo(indice).getMaterial();
+    }
 }

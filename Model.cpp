@@ -228,4 +228,8 @@ namespace PAG
     {
         _nombre = nombre;
     }
+
+    const Material& Model::getMaterial () const { return _material; }
+
+    void Model::setMaterial (const Material& m) { _material = m; }
 }

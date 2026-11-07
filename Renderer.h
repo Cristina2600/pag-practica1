@@ -64,6 +64,10 @@ namespace PAG
 
             //método para mantener el triangulo 
             void creaTriangulo();
+            //como tenemos la clase material que se define a si misma y el modelo lleva un material por si mismo
+            //aqui lo que hacemos es darle otros materiales al modelo
+            void asignaMaterial (int indice, const Material& m);
+            Material materialModelo (int indice) const;
         };
 }
 

@@ -9,7 +9,7 @@
 #include "CameraMovement.h"
 #include "ModelWindow.h"
 #include "TransformWindow.h"
-
+#include "MaterialWindow.h"
 struct GLFWwindow; //forward declaration, es solo para declarar la funcion inicializar más abajo
 
 #include "Listener.h" //vamos a necesitar un vector de objetos que escuchen los cambios 
@@ -45,6 +45,8 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
             ModelWindow _ventanaModelos;
             //ahora mostraremos la ventana para elegir las transformaciones
             TransformWindow _ventanaTransformaciones;
+            //esto será para la ventana que nos dejará elegir los materiales 
+            MaterialWindow _ventanaMaterial; 
 
 
         public:

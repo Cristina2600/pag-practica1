@@ -9,6 +9,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include "Material.h"
 
 namespace PAG
 {
@@ -47,6 +48,9 @@ namespace PAG
                                const std::vector<GLuint>& indices); //estos son los buffers que definen toda la geometria
             void actualizarMatrizModelado (); //funcion auxiliar en privado
 
+            //cada modelo va a tener guardado su material
+            Material _material;
+
         public:
             Model () = default;
             ~Model ();
@@ -73,6 +77,9 @@ namespace PAG
 
             const std::string& getNombre () const;
             void setNombre (const std::string& nombre);
+
+            const Material& getMaterial () const;
+            void setMaterial (const Material& m);
     };
 }
 
