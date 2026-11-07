@@ -102,10 +102,12 @@ void Renderer::liberarRecursos ()
  
         const glm::mat4 vp = _camara.matrizVisionProyeccion();
  
-        for (const std::unique_ptr<Model>& m : _modelos)
+       for (const std::unique_ptr<Model>& m : _modelos)
         {
             const glm::mat4 mvp = vp * m->getMatrizModelado();
             glUniformMatrix4fv(idUniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+            glUniform3fv(idUniformColorDifuso, 1,
+                         glm::value_ptr(m->getMaterial().getDifuso()));  
             m->dibujar();
         }
     }
