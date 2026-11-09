@@ -1,5 +1,3 @@
-
-
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -59,7 +57,8 @@ namespace PAG
     }
 
     /**
-     * Construye la ventana de la interfaz.
+     * Construye el panel unico de la interfaz: una ventana fija arriba a la
+     * izquierda con una seccion desplegable por cada grupo de controles.
      * Debe llamarse en cada vuelta del bucle principal, antes de
      * renderizar() y antes de dibujar la escena OpenGL.
      */
@@ -70,143 +69,135 @@ namespace PAG
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Donde aparecerá la ventana, primero le dices la posicion y
-        //ImGuiCond_once te dice que solo la dibujes una vez al inicio, si no la pongo no podemos mover la ventana porque se redibujaria
-        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
-        if (ImGui::Begin("Fondo")) //crea la ventana llamandola fondo
-        {
-            ImGui::SetWindowFontScale(1.0f); //le da un tamaño al texto dentro de la ventana
-            if (ImGui::ColorEdit3("Actual", _bgColorPicker)) //aqui colorEdit3 dibuja el control y modifica el color que hemos definido antes
-            {
-                // ColorEdit3 devuelve true cuando el
-                // usuario ha modificado el color. Es aqui donde
-                // notificamos a los observadores (patron Observador).
-                AvisarListenersCambioFondo();
-            }
-        }
-        ImGui::End(); //esto se llama siempre se abra o no la ventana por si acaso
+        // Posicion y tamaño forzados cada fotograma + flags: el panel no se puede mover,
+        // redimensionar ni colapsar
+        const ImGuiIO& io = ImGui::GetIO();
+        ImGui::SetNextWindowPos(ImVec2(10, 10));
+        ImGui::SetNextWindowSize(ImVec2(360, io.DisplaySize.y - 20));
+        const ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove
+                                     | ImGuiWindowFlags_NoResize
+                                     | ImGuiWindowFlags_NoCollapse
+                                     | ImGuiWindowFlags_NoSavedSettings;
 
-        // Aqui tenemos otra ventana igual que antes pero para ver los mensajes
-        ImGui::SetNextWindowPos(ImVec2(300, 10), ImGuiCond_Once);
-        if (ImGui::Begin("Mensajes"))
+        if (ImGui::Begin("Panel de control", nullptr, flags))
         {
-            ImGui::SetWindowFontScale(1.0f); //le damos un tamaño a la letra
-            for (const std::string& m : _mensajes)  //recorremos todos los mensajes
+            // PushID/PopID: todos los controles estan en la misma ventana, asi que
+            // etiquetas repetidas (p.ej. dos combos "Modelo") no deben chocar
+            if (ImGui::CollapsingHeader("Fondo"))
             {
-                ImGui::TextUnformatted(m.c_str()); //aqui usamos texto sin formato por si hay algun caracter raro que pueda dar problemas
+                ImGui::PushID("fondo");
+                dibujarSeccionFondo();
+                ImGui::PopID();
             }
-        }
-        ImGui::End();
-        ImGui::SetNextWindowPos(ImVec2(10, 100), ImGuiCond_Once); //ventana para el manejo de los shaders
-        if (ImGui::Begin("Shader Program"))
-        {
-            ImGui::InputText("##", &_nombreShader, ImGuiInputTextFlags_AutoSelectAll);
-            if (ImGui::Button("Load")) //así se llama el boton
+
+            if (ImGui::CollapsingHeader("Shader Program"))
             {
-                try
+                ImGui::PushID("shader");
+                dibujarSeccionShader();
+                ImGui::PopID();
+            }
+
+            if (ImGui::CollapsingHeader("Camera"))
+            {
+                ImGui::PushID("camara");
+                dibujarSeccionCamara();
+                ImGui::PopID();
+            }
+
+            if (ImGui::CollapsingHeader("Modelos", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::PushID("modelos");
+                _ventanaModelos.dibujarContenido();   // cargar y eliminar
+                if (ImGui::TreeNode("Transformaciones"))
                 {
-                    for (size_t i = 0; i < _listeners.size(); i++)
-                    {
-                        _listeners[i]->wakeUp(WindowType::ShaderProgram, _nombreShader.c_str());
-                    }
-                    aniadirMensaje("Shader program '" + _nombreShader + "' cargado correctamente");
+                    _ventanaTransformaciones.dibujarContenido();
+                    ImGui::TreePop();
                 }
-                catch (const std::exception& e)
+                ImGui::PopID();
+            }
+
+            if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::PushID("material");
+                if (ImGui::TreeNode("Propiedades del material"))
                 {
-                    aniadirMensaje(e.what());
+                    _ventanaMaterial.DibujarContenido();
+                    ImGui::TreePop();
                 }
+                if (ImGui::TreeNode("Visualizacion"))
+                {
+                    dibujarSeccionVisualizacion();
+                    ImGui::TreePop();
+                }
+                if (ImGui::TreeNode("Luces"))
+                {
+                    ImGui::TextUnformatted("Pendiente: se anadiran con la iluminacion");
+                    ImGui::TreePop();
+                }
+                ImGui::PopID();
+            }
+
+            if (ImGui::CollapsingHeader("Mensajes", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::PushID("mensajes");
+                dibujarSeccionMensajes();
+                ImGui::PopID();
             }
         }
-        ImGui::End();
-        dibujarVentanaCamara();
-        _ventanaModelos.dibujar();
-        _ventanaTransformaciones.dibujar();
-        _ventanaMaterial.dibujar();
-        dibujarVentanaVisualizacion();
+        ImGui::End(); //esto se llama siempre se abra o no la ventana
 
-        
+        // El selector de archivos es una ventana flotante propia: va FUERA del panel
+        _ventanaModelos.dibujarSelector();
     }
 
-   //esto NO DIBUJA NADA solo calcula vertices y todo lo que hemos definido anteriormente, esto llama a opengl para que lo pinte
-    void GUI::renderizar ()
-    {
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    }
+    // ------------------------------------------------------------------
+    // Secciones del panel (solo controles, sin Begin/End)
+    // ------------------------------------------------------------------
 
-    /**
-     * Libera los recursos de Dear ImGui. Debe llamarse ANTES de
-     * destruir la ventana GLFW.
-     */
-    void GUI::liberar ()
+    void GUI::dibujarSeccionFondo ()
     {
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
-    }
-
-    /**
-     * Suscribe un observador a las notificaciones de esta GUI
-     */
-    void GUI::anadirListener (Listener* listener)
-    {
-        _listeners.push_back(listener); //funciones de los vectores dinámicos
-         _ventanaModelos.addListener(listener); //aqui añadimos los listeners de los modelos obj 
-         _ventanaTransformaciones.addListener(listener);  //registramos los listeners para amnejar lo cambios en transformaciones 
-        _ventanaMaterial.addListener(listener);
-        }
-
-    /**
-     * Anade un mensaje al historial mostrado en la ventana "Mensajes"
-     */
-    void GUI::aniadirMensaje (const std::string& mensaje)
-    {
-        _mensajes.push_back(mensaje);
-    }
-
-    /**
-     * Recorre la lista de observadores y notifica el nuevo color de fondo
-     */
-    void GUI::AvisarListenersCambioFondo ()
-    {
-        for (size_t i = 0; i < _listeners.size(); i++)
+        if (ImGui::ColorEdit3("Actual", _bgColorPicker)) //colorEdit3 devuelve true cuando el usuario cambia el color
         {
-            _listeners[i]->wakeUp(WindowType::Background, &_bgColorPicker[0]); //usamos la funcion wake up para notificarles el cambio
+            AvisarListenersCambioFondo(); // patron Observador
         }
     }
 
-//le cambiamos los colores a morado al inicializar toda la interfaz, para que se haga una sola vez
-void GUI::aplicarEstiloMorado ()
-{
-    ImGuiStyle& estilo = ImGui::GetStyle();
-    ImVec4* colores = estilo.Colors;
+    void GUI::dibujarSeccionShader ()
+    {
+        ImGui::InputText("##nombre", &_nombreShader, ImGuiInputTextFlags_AutoSelectAll);
+        if (ImGui::Button("Load")) //así se llama el boton
+        {
+            try
+            {
+                for (size_t i = 0; i < _listeners.size(); i++)
+                {
+                    _listeners[i]->wakeUp(WindowType::ShaderProgram, _nombreShader.c_str());
+                }
+                aniadirMensaje("Shader program '" + _nombreShader + "' cargado correctamente");
+            }
+            catch (const std::exception& e)
+            {
+                aniadirMensaje(e.what());
+            }
+        }
+    }
 
-    // Barra de titulo: morado MEDIO (ni muy oscuro ni muy claro, para que el texto negro se lea)
-    colores[ImGuiCol_TitleBg]          = ImVec4(0.62f, 0.45f, 0.75f, 1.00f);
-    colores[ImGuiCol_TitleBgActive]    = ImVec4(0.68f, 0.52f, 0.80f, 1.00f);
-    colores[ImGuiCol_TitleBgCollapsed] = ImVec4(0.62f, 0.45f, 0.75f, 0.75f);
-    colores[ImGuiCol_PopupBg]      = ImVec4(0.80f, 0.90f, 1.00f, 1.00f); //color del desplegable
+    void GUI::dibujarSeccionMensajes ()
+    {
+        // Zona con scroll propio para que el historial no alargue el panel
+        ImGui::BeginChild("##historial", ImVec2(0, 160), true);
+        for (const std::string& m : _mensajes)
+        {
+            ImGui::TextWrapped("%s", m.c_str()); //%s: asi un '%' dentro del mensaje no se interpreta
+        }
+        if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+        {
+            ImGui::SetScrollHereY(1.0f);   // baja solo si ya estabas al final
+        }
+        ImGui::EndChild();
+    }
 
-    colores[ImGuiCol_WindowBg] = ImVec4(0.88f, 0.82f, 0.94f, 1.00f);
-
-    colores[ImGuiCol_FrameBg]        = ImVec4(0.78f, 0.68f, 0.90f, 1.00f);
-    colores[ImGuiCol_FrameBgHovered] = ImVec4(0.70f, 0.58f, 0.85f, 1.00f);
-    colores[ImGuiCol_Button]         = ImVec4(0.45f, 0.20f, 0.60f, 1.00f);
-    colores[ImGuiCol_ButtonHovered]  = ImVec4(0.55f, 0.28f, 0.70f, 1.00f);
-    colores[ImGuiCol_ButtonActive]   = ImVec4(0.35f, 0.14f, 0.48f, 1.00f);
-
-    colores[ImGuiCol_Text] = ImVec4(0.10f, 0.05f, 0.15f, 1.00f);   // negro, legible en ambas zonas
-}
-void GUI::notificarMovimiento (double horizontal, double vertical)
-{
-    for (size_t i = 0; i < _listeners.size(); i++)
-        _listeners[i]->wakeUp(WindowType::CameraMove, horizontal, vertical); //recorres todos los listeners para notificar los cambios en la cámara
-}
-
-void GUI::dibujarVentanaCamara ()
-{
-    ImGui::SetNextWindowPos(ImVec2(10, 300), ImGuiCond_Once);
-    if (ImGui::Begin("Camera"))
+    void GUI::dibujarSeccionCamara ()
     {
         static const char* nombres[] = { "Zoom", "Pan", "Tilt", "Dolly", "Crane", "Orbit" };
         ImGui::Text("Movement");
@@ -263,19 +254,8 @@ void GUI::dibujarVentanaCamara ()
         }
         ImGui::PopItemFlag();
     }
-    ImGui::End();
-}
-std::string GUI::recogerMensajePendiente ()
-{
-    std::string m = _mensajePendiente;
-    _mensajePendiente.clear();
-    return m;
-}
 
-void GUI::dibujarVentanaVisualizacion ()
-{
-    ImGui::SetNextWindowPos(ImVec2(10, 480), ImGuiCond_Once);
-    if (ImGui::Begin("Visualizacion"))
+    void GUI::dibujarSeccionVisualizacion ()
     {
         bool cambiado = false;
         cambiado |= ImGui::RadioButton("Alambre", &_modoVisualizacion,
@@ -292,6 +272,95 @@ void GUI::dibujarVentanaVisualizacion ()
             }
         }
     }
-    ImGui::End();
-}
+
+    // ------------------------------------------------------------------
+
+   //esto NO DIBUJA NADA solo calcula vertices y todo lo que hemos definido anteriormente, esto llama a opengl para que lo pinte
+    void GUI::renderizar ()
+    {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    /**
+     * Libera los recursos de Dear ImGui. Debe llamarse ANTES de
+     * destruir la ventana GLFW.
+     */
+    void GUI::liberar ()
+    {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
+
+    /**
+     * Suscribe un observador a las notificaciones de esta GUI
+     */
+    void GUI::anadirListener (Listener* listener)
+    {
+        _listeners.push_back(listener); //funciones de los vectores dinámicos
+        _ventanaModelos.addListener(listener); //aqui añadimos los listeners de los modelos obj 
+        _ventanaTransformaciones.addListener(listener);  //registramos los listeners para amnejar lo cambios en transformaciones 
+        _ventanaMaterial.addListener(listener);
+    }
+
+    /**
+     * Anade un mensaje al historial mostrado en la seccion "Mensajes"
+     */
+    void GUI::aniadirMensaje (const std::string& mensaje)
+    {
+        _mensajes.push_back(mensaje);
+    }
+
+    /**
+     * Recorre la lista de observadores y notifica el nuevo color de fondo
+     */
+    void GUI::AvisarListenersCambioFondo ()
+    {
+        for (size_t i = 0; i < _listeners.size(); i++)
+        {
+            _listeners[i]->wakeUp(WindowType::Background, &_bgColorPicker[0]); //usamos la funcion wake up para notificarles el cambio
+        }
+    }
+
+    //le cambiamos los colores a morado al inicializar toda la interfaz, para que se haga una sola vez
+    void GUI::aplicarEstiloMorado ()
+    {
+        ImGuiStyle& estilo = ImGui::GetStyle();
+        ImVec4* colores = estilo.Colors;
+
+        // Barra de titulo: morado MEDIO (ni muy oscuro ni muy claro, para que el texto negro se lea)
+        colores[ImGuiCol_TitleBg]          = ImVec4(0.62f, 0.45f, 0.75f, 1.00f);
+        colores[ImGuiCol_TitleBgActive]    = ImVec4(0.68f, 0.52f, 0.80f, 1.00f);
+        colores[ImGuiCol_TitleBgCollapsed] = ImVec4(0.62f, 0.45f, 0.75f, 0.75f);
+        colores[ImGuiCol_PopupBg]      = ImVec4(0.80f, 0.90f, 1.00f, 1.00f); //color del desplegable
+
+        colores[ImGuiCol_WindowBg] = ImVec4(0.88f, 0.82f, 0.94f, 1.00f);
+
+        colores[ImGuiCol_FrameBg]        = ImVec4(0.78f, 0.68f, 0.90f, 1.00f);
+        colores[ImGuiCol_FrameBgHovered] = ImVec4(0.70f, 0.58f, 0.85f, 1.00f);
+        colores[ImGuiCol_Button]         = ImVec4(0.45f, 0.20f, 0.60f, 1.00f);
+        colores[ImGuiCol_ButtonHovered]  = ImVec4(0.55f, 0.28f, 0.70f, 1.00f);
+        colores[ImGuiCol_ButtonActive]   = ImVec4(0.35f, 0.14f, 0.48f, 1.00f);
+
+        // Cabeceras de las secciones desplegables (CollapsingHeader / TreeNode) en morado
+        colores[ImGuiCol_Header]        = ImVec4(0.62f, 0.45f, 0.75f, 1.00f);
+        colores[ImGuiCol_HeaderHovered] = ImVec4(0.68f, 0.52f, 0.80f, 1.00f);
+        colores[ImGuiCol_HeaderActive]  = ImVec4(0.55f, 0.38f, 0.70f, 1.00f);
+
+        colores[ImGuiCol_Text] = ImVec4(0.10f, 0.05f, 0.15f, 1.00f);   // negro, legible en ambas zonas
+    }
+
+    void GUI::notificarMovimiento (double horizontal, double vertical)
+    {
+        for (size_t i = 0; i < _listeners.size(); i++)
+            _listeners[i]->wakeUp(WindowType::CameraMove, horizontal, vertical); //recorres todos los listeners para notificar los cambios en la cámara
+    }
+
+    std::string GUI::recogerMensajePendiente ()
+    {
+        std::string m = _mensajePendiente;
+        _mensajePendiente.clear();
+        return m;
+    }
 }

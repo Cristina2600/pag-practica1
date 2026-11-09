@@ -14,72 +14,69 @@ namespace PAG
     {
         _listeners.push_back(listener);
     }
-//dibuja la ventana para elegir las transofrmaciones
-    void TransformWindow::dibujar ()
+
+    // Dibuja los controles de transformacion dentro del panel unico de GUI
+    void TransformWindow::dibujarContenido ()
     {
-        ImGui::SetNextWindowPos(ImVec2(700, 250), ImGuiCond_Once);
-        if (ImGui::Begin("Transformaciones"))
+        const int n = Renderer::getInstancia().numModelos();
+        if (n == 0)
         {
-            ImGui::SetWindowFontScale(1.0f);
-
-            const int n = Renderer::getInstancia().numModelos();
-            if (n == 0)
-            {
-                ImGui::TextUnformatted("No hay modelos en la escena");
-            }
-            else
-            {
-                if (_seleccionado >= n)
-                {
-                    _seleccionado = n - 1;   // se elimino el ultimo modelo
-                }
-
-                // Combo para elegir modelo
-                const std::string actual = Renderer::getInstancia().nombreModelo(_seleccionado);
-                if (ImGui::BeginCombo("Modelo", actual.c_str()))
-                {
-                    for (int i = 0; i < n; ++i)
-                    {
-                        const std::string etiqueta = Renderer::getInstancia().nombreModelo(i)
-                                                     + "##combo" + std::to_string(i);
-                        if (ImGui::Selectable(etiqueta.c_str(), _seleccionado == i))
-                        {
-                            _seleccionado = i;
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-
-                // Valores ACTUALES del modelo elegido: los controles los editan directamente
-                Transformacion t = Renderer::getInstancia().transformacionModelo(_seleccionado);
-                bool cambio = false;
-
-                if (ImGui::DragFloat3("Traslacion", &t.posicion.x, 0.01f))
-                {
-                    cambio = true;
-                }
-                if (ImGui::DragFloat3("Rotacion (grados)", &t.rotacion.x, 0.5f))
-                {
-                    cambio = true;
-                }
-                if (ImGui::DragFloat3("Escala", &t.escala.x, 0.01f, 0.01f, 100.0f))
-                {
-                    cambio = true;
-                }
-                if (ImGui::Button("Reiniciar rotacion y escala"))
-                {
-                    t.rotacion = glm::vec3(0.0f);
-                    t.escala   = glm::vec3(1.0f);
-                    cambio = true;
-                }
-
-                if (cambio)
-                {
-                    notificar(_seleccionado, t);
-                }
-            }
+            ImGui::TextUnformatted("No hay modelos en la escena");
+            return;
         }
-        ImGui::End();
+
+        if (_seleccionado >= n)
+        {
+            _seleccionado = n - 1;   // se elimino el ultimo modelo
+        }
+        if (_seleccionado < 0)
+        {
+            _seleccionado = 0;
+        }
+
+        // Combo para elegir modelo
+        const std::string actual = Renderer::getInstancia().nombreModelo(_seleccionado);
+        if (ImGui::BeginCombo("Modelo", actual.c_str()))
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                const std::string etiqueta = Renderer::getInstancia().nombreModelo(i)
+                                             + "##combo" + std::to_string(i);
+                if (ImGui::Selectable(etiqueta.c_str(), _seleccionado == i))
+                {
+                    _seleccionado = i;
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        // Valores ACTUALES del modelo elegido: los controles los editan directamente
+        Transformacion t = Renderer::getInstancia().transformacionModelo(_seleccionado);
+        bool cambio = false;
+
+        if (ImGui::DragFloat3("Traslacion", &t.posicion.x, 0.01f))
+        {
+            cambio = true;
+        }
+        if (ImGui::DragFloat3("Rotacion (grados)", &t.rotacion.x, 0.5f))
+        {
+            cambio = true;
+        }
+        if (ImGui::DragFloat3("Escala", &t.escala.x, 0.01f, 0.01f, 100.0f))
+        {
+            cambio = true;
+        }
+        if (ImGui::Button("Reiniciar rotacion y escala"))
+        {
+            t.rotacion = glm::vec3(0.0f);
+            t.escala   = glm::vec3(1.0f);
+            cambio = true;
+        }
+
+        if (cambio)
+        {
+            notificar(_seleccionado, t);
+        }
     }
 
     /**

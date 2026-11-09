@@ -24,42 +24,36 @@ namespace PAG
     {
         _listeners.push_back(listener);
     }
-//método para dibujar cargando los modelos .obj
-    void ModelWindow::dibujar ()
+//método para dibujar cargando los modelos .obj, cambiado para poder dibujar todo en una columna 
+        void ModelWindow::dibujarContenido ()
     {
-        ImGui::SetNextWindowPos(ImVec2(700, 10), ImGuiCond_Once);
-        if (ImGui::Begin("Modelos"))
+        if (ImGui::Button("Cargar OBJ..."))
         {
-            ImGui::SetWindowFontScale(1.0f);
+            _selector.Open();
+        }
 
-            if (ImGui::Button("Cargar OBJ..."))
+        const int n = Renderer::getInstancia().numModelos();
+        ImGui::Text("Modelos en escena: %d", n);
+
+        for (int i = 0; i < n; ++i)
+        {
+            const std::string etiqueta = Renderer::getInstancia().nombreModelo(i)
+                                         + "##lista" + std::to_string(i);
+            if (ImGui::Selectable(etiqueta.c_str(), _seleccionado == i))
             {
-                _selector.Open();   // abre el dialogo
-            }
-
-            const int n = Renderer::getInstancia().numModelos();
-            ImGui::Text("Modelos en escena: %d", n);
-
-            // Lista de modelos: al hacer clic en uno se marca como seleccionado
-            for (int i = 0; i < n; ++i)
-            {
-                const std::string etiqueta = Renderer::getInstancia().nombreModelo(i)
-                                             + "##lista" + std::to_string(i);
-                if (ImGui::Selectable(etiqueta.c_str(), _seleccionado == i))
-                {
-                    _seleccionado = i;
-                }
-            }
-
-            if (ImGui::Button("Eliminar seleccionado") && _seleccionado >= 0 && _seleccionado < n)
-            {
-                notificarBorrado(_seleccionado);
-                _seleccionado = -1;
+                _seleccionado = i;
             }
         }
-        ImGui::End();
 
-        // El selector tiene su propia ventana: se llama a Display() una vez por fotograma
+        if (ImGui::Button("Eliminar seleccionado") && _seleccionado >= 0 && _seleccionado < n)
+        {
+            notificarBorrado(_seleccionado);
+            _seleccionado = -1;
+        }
+    }
+
+    void ModelWindow::dibujarSelector ()
+    {
         _selector.Display();
         if (_selector.HasSelected())
         {

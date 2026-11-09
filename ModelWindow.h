@@ -29,7 +29,9 @@ namespace PAG
         public:
             ModelWindow ();
             void addListener (Listener* listener);
-            void dibujar ();
+            //cambiamos la forma de dibujar 
+            void dibujarContenido ();   // controles, sin Begin/End
+            void dibujarSelector ();    // dialogo de archivos (va FUERA del panel)
     };
 }
 

@@ -18,8 +18,8 @@ struct GLFWwindow; //forward declaration, es solo para declarar la funcion inici
 namespace PAG //vamos a usar siempre nuestro espacio de nombres
 {
     /** @brief aqui vamos a tener toda la comunicacion Dear ImGui para el patron singleton
-     * Ademas tendremos todos los objetos que cambian de estado y modifica a los que escuchan a traves de los listeners
-     * 
+     * Ademas tendremos todos los objetos que cambian de estado y modifica a los que escuchan a traves de los listeners.
+     * Toda la interfaz vive en un unico panel fijo con secciones desplegables.
      */
 
     class GUI
@@ -39,19 +39,22 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
             //atributos privados para la cámara y sus movimientos
             int   _movimiento = static_cast<int>(CameraMovement::Orbit); // mismo valor por defecto que Renderer
             float _fovX = 60.0f;                                         // mismo valor por defecto que Camera
-            void dibujarVentanaCamara ();
             void notificarMovimiento (double horizontal, double vertical);
             std::string _mensajePendiente;
-            //para mostrar por pantalla la nueva ventana de los modelos
+
+            //contenido de cada ventana (se dibujan dentro del panel unico)
             ModelWindow _ventanaModelos;
-            //ahora mostraremos la ventana para elegir las transformaciones
             TransformWindow _ventanaTransformaciones;
-            //esto será para la ventana que nos dejará elegir los materiales 
             MaterialWindow _ventanaMaterial; 
             //el modo de visualizacion tendrá dos enteros, por defecto solido
-             int _modoVisualizacion = static_cast<int>(ModoVisualizacion::Solido);   
-            void dibujarVentanaVisualizacion ();                                    
+            int _modoVisualizacion = static_cast<int>(ModoVisualizacion::Solido);   
 
+            //una funcion por cada seccion desplegable del panel
+            void dibujarSeccionFondo ();
+            void dibujarSeccionShader ();
+            void dibujarSeccionCamara ();
+            void dibujarSeccionVisualizacion ();
+            void dibujarSeccionMensajes ();
 
         public:
             virtual ~GUI (); //vamos a tener un destructor virtual por si luego hay clases hijas 

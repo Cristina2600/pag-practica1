@@ -22,7 +22,7 @@ namespace PAG
 
         public:
             void addListener (Listener* listener);
-            void dibujar ();
+            void dibujarContenido ();
     };
 }
 

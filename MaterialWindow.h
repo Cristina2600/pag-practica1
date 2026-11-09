@@ -18,7 +18,7 @@ namespace PAG
                                     float* esp, float exponente); //valores para definir el material 
         public:
             void addListener (Listener* listener);
-            void dibujar ();
+            void DibujarContenido ();
     };
 }
 
