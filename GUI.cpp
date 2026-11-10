@@ -271,6 +271,13 @@ namespace PAG
                 _listeners[i]->wakeUp(WindowType::RenderMode, _modoVisualizacion);
             }
         }
+        if (ImGui::ColorEdit3("Color alambre", _colorAlambre))
+        {
+            for (size_t i = 0; i < _listeners.size(); i++)
+            {
+                _listeners[i]->wakeUp(WindowType::WireColor, &_colorAlambre[0]);
+            }
+        }
     }
 
     // ------------------------------------------------------------------

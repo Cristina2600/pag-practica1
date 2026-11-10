@@ -35,6 +35,10 @@ namespace PAG
              GLint idUniformColorDifuso = -1;                       
             ModoVisualizacion _modo = ModoVisualizacion::Solido;   
 
+            //color del alambre
+            GLint idUniformColorAlambre = -1; //siempre empieza en menos 1
+            glm::vec3 _colorAlambre = glm::vec3(1.0f, 0.0f, 0.0f);   // rojo por defecto
+
             glm::vec3 siguientePosicion ();
             Model& modelo (int indice);
             const Model& modelo (int indice) const;
@@ -74,7 +78,11 @@ namespace PAG
             Material materialModelo (int indice) const;
             //necesitamos metodos para responder ante el cambio de alambre y solido
             void cambiaModoVisualizacion (ModoVisualizacion m);   
-            ModoVisualizacion modoVisualizacion () const;          
+            ModoVisualizacion modoVisualizacion () const;  
+            
+            //métodos para cambiar los colores del alambre
+            void cambiaColorAlambre (const glm::vec3& c);
+            const glm::vec3& colorAlambre () const;
         };
 }
 

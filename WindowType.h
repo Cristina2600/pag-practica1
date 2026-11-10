@@ -22,7 +22,9 @@ namespace PAG
         //atributos para colocar distintos modelos en la rejilla
         ModelTransform,  // int indice + 9 double (posicion, rotacion, escala)
         ModelMaterial, // esto asignará el material de cada modelo
-        RenderMode //int para definir si es un alambre o es un sólido
+        RenderMode, //int para definir si es un alambre o es un sólido
+        //vamos a cambiarle el color al alambre tambien
+        WireColor      // float* con el color rgb del alambre
     };
 }
 

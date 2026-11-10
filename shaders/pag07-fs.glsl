@@ -3,18 +3,19 @@
 out vec4 colorFragmento;
 
 uniform vec3 uColorDifuso;   // color difuso del material, lo envia el Renderer
+uniform vec3 uColorAlambre;  // color del alambre, lo envia el Renderer
 
-// Definimos la subrutina
+// 1. Tipo de la subrutina
 subroutine vec4 fCalcularColor ();
 
-// 2.implementacion para la subrutina, declaramos
+// 2. Uniform que representa la implementacion elegida
 subroutine uniform fCalcularColor uMetodoColorElegido;
 
 // 3. Implementaciones
 subroutine ( fCalcularColor )
 vec4 colorAlambre ()
 {
-    return vec4 ( 1.0, 0.0, 0.0, 1.0 );    // rojo fijo
+    return vec4 ( uColorAlambre, 1.0 );    // color editable desde la GUI
 }
 
 subroutine ( fCalcularColor )

@@ -47,7 +47,10 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
             TransformWindow _ventanaTransformaciones;
             MaterialWindow _ventanaMaterial; 
             //el modo de visualizacion tendrá dos enteros, por defecto solido
-            int _modoVisualizacion = static_cast<int>(ModoVisualizacion::Solido);   
+            int _modoVisualizacion = static_cast<int>(ModoVisualizacion::Solido); 
+            
+            //cambiar colores del alambre
+            float _colorAlambre[3] = { 1.0f, 0.0f, 0.0f };   // mismo valor por defecto que Renderer
 
             //una funcion por cada seccion desplegable del panel
             void dibujarSeccionFondo ();

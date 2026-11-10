@@ -107,7 +107,8 @@ void Renderer::liberarRecursos ()
             const glm::mat4 mvp = vp * m->getMatrizModelado();
             glUniformMatrix4fv(idUniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
             glUniform3fv(idUniformColorDifuso, 1,
-                         glm::value_ptr(m->getMaterial().getDifuso()));  
+                         glm::value_ptr(m->getMaterial().getDifuso()));
+            glUniform3fv(idUniformColorAlambre, 1, glm::value_ptr(_colorAlambre));  
             m->dibujar();
         }
     }
@@ -257,6 +258,17 @@ void Renderer::wakeUp (WindowType t, ...)
             cambiaModoVisualizacion(static_cast<ModoVisualizacion>(modo));
             break;
         }
+
+        case WindowType::WireColor:
+        {
+            va_list args;
+            va_start(args, t);
+            float* c = va_arg(args, float*);
+            glm::vec3 color(c[0], c[1], c[2]);   // copiar antes de cerrar la lista
+            va_end(args);
+            cambiaColorAlambre(color);
+            break;
+        }
     }
 }
 
@@ -280,7 +292,8 @@ void Renderer::creaShaderProgram (const std::string& nombreBase)
 {
     _shaderProgram->cargar(nombreBase);
     idUniformMVP = _shaderProgram->getUniformLocation("matrizMVP");    //busca los shaders con este tipo de matriz  
-     idUniformColorDifuso = _shaderProgram->getUniformLocation("uColorDifuso");
+    idUniformColorDifuso = _shaderProgram->getUniformLocation("uColorDifuso");
+    idUniformColorAlambre = _shaderProgram->getUniformLocation("uColorAlambre");
 }
 
 
@@ -416,5 +429,15 @@ void Renderer::creaTriangulo ()
     ModoVisualizacion Renderer::modoVisualizacion () const
     {
         return _modo;
+    }
+
+        void Renderer::cambiaColorAlambre (const glm::vec3& c)
+    {
+        _colorAlambre = c;
+    }
+
+    const glm::vec3& Renderer::colorAlambre () const
+    {
+        return _colorAlambre;
     }
 }
