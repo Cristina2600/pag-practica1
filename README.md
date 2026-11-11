@@ -351,3 +351,103 @@ a `Camera`.
 
 
 
+# Práctica 7: Subrutinas GLSL y materiales
+
+## Cambios realizados respecto a la Práctica 6
+
+- Implementamos la nueva clase `Material` con las propiedades necesarias para el color de las luces: color ambiente, color difuso, color especular y exponente especular. Cada propiedad tiene su getter y su setter.
+- `Model` tiene ahora un atributo `Material _material` con `getMaterial` y `setMaterial`. Cada modelo
+  tiene su propio material.
+- Ahora vamos a distinguir el `ModoVisualizacion` para saber si trabajamos los modelos como solidos o modo alambre.
+- `Model` ya no decide cómo se dibuja ahora solo se ocupa de su geometría.
+- `Renderer` guarda el modo de visualización (`_modo`) y en `refrescar()` llama a `glPolygonMode`
+  (`GL_LINE` o `GL_FILL`), activa la subrutina correspondiente y envía al shader el color difuso del
+  material de cada modelo.
+- `ShaderProgram` activará las subrutinas
+- Nuevos shaders `pag07-vs.glsl` y `pag07-fs.glsl`. Los shaders anteriores no se tocan, así que `pag05`
+  sigue funcionando.
+- `WindowType` añade `ModelMaterial`, `RenderMode` y `WireColor`.
+- Nueva clase `MaterialWindow`, que edita el material del modelo elegido y notifica al `Renderer`.
+- La interfaz se reorganiza en un único panel.
+
+## Materiales
+
+Para poder calcular iluminación, cada superficie debe indicar cómo responde a la luz. Se guardan
+las cuatro propiedades del modelo de Phong: color de reflejo de la luz ambiental, color base del objeto (difuso), color del brillo (especular), concentracion del brillo (exponente).
+
+Por ahora solo el color difuso se utiliza para pintar (en modo sólido). El resto se almacena y se edita, pero
+no tiene efecto visible hasta que se implementen las luces.
+
+## Subrutinas GLSL
+
+Las GPU no gestionan bien los condicionales, así que evitamos un `if (modo == ALAMBRE)` en el fragment shader.
+Alternativas:
+
+  Subrutinas GLSL: un único programa con varias implementaciones de una misma función,
+   y la implementación se elige desde C++ antes de dibujar, igual que un puntero a función.
+
+El fragment shader `pag07-fs.glsl` sigue los cuatro pasos de las subrutinas:
+
+1. Tipo: `subroutine vec4 fCalcularColor();`
+2. Uniform asociado: `subroutine uniform fCalcularColor uMetodoColorElegido;`
+3. Implementaciones: `colorAlambre` (devuelve `uColorAlambre`) y `colorSolido` (devuelve `uColorDifuso`).
+4. Llamada en `main`: `colorFragmento = uMetodoColorElegido();`
+
+Desde C++, `ShaderProgram::activarSubrutina` obtiene el índice por nombre y lo activa. Hay dos
+precauciones:
+
+- El programa debe estar activo con `glUseProgram` antes de activar la subrutina.
+- La selección se guarda en el estado del programa y se pierde al cambiarlo o reenlazarlo, por eso
+  se activa en cada fotograma, dentro de `Renderer::refrescar`.
+
+Si el shader cargado no tiene la subrutina (por ejemplo `pag05`), `activarSubrutina` devuelve `false` y no
+lanza excepción, porque se ejecuta 60 veces por segundo. Así la aplicación sigue funcionando como antes
+con los shaders antiguos.
+
+
+## Decisiones de diseño
+
+- Implementamos la clase Material y no como cuatro atributos sueltos en Model, así es un único objeto con todos los atributos que deben ir juntos
+- El material se pasa por valor en `Model`. El guion indica que podremos asignar el mismo material
+  a varios modelos, pero también pide "asignar y cambiar el material de cada modelo". Con una copia por
+  modelo, cambiar uno nunca afecta a otro.
+- Ahora visualizar en alambre o en solido se maneja en renderer ya que es un estado global y podría el ultimo modelo imponer su modo al resto de modelo
+- Tenemos las subrutinas en shaderProgram para que renderer no tenga que comunicarse con Opengl
+-Los errores se muestran en la seecion de mensajes con un out of range en renderer al cargar modelos
+
+
+## Apartados extra
+
+### 1. Reorganización de la interfaz en un único panel
+
+Con la cantdad de ventanas que teniamos hasta el momento, la interfaz comenzaba a mostrarse desorganizada y dificil de manejar por lo que optamos por organizarlo todo en una sola columna
+
+- **Fondo**
+- **Shader Program**
+- **Camera**
+- **Modelos** (cargar y eliminar; dentro, un desplegable **Transformaciones**)
+- **Material** (dentro: **Propiedades del material**, **Visualizacion** y **Luces**)
+- **Mensajes**
+
+### 2. Color del alambre editable
+
+El guion pide un color fijo para el modo alambre. Como mejora, el color se puede cambiar desde
+Material > Visualizacion con un selector "Color alambre" (rojo por defecto):
+
+- `pag07-fs.glsl` añade `uniform vec3 uColorAlambre`, que devuelve la subrutina `colorAlambre`.
+- `Renderer` guarda `_colorAlambre`, busca el uniform en `creaShaderProgram` y lo envía en `refrescar`.
+- Nuevo valor `WindowType::WireColor` (argumento `float*`). Se creó un valor distinto de `RenderMode`
+  porque cada `case` de `wakeUp` lee un tipo de argumento concreto (`RenderMode` lee un `int`, `WireColor` un
+  `float*`) y mezclarlos provocaría comportamiento indefinido.
+- Si el shader no tiene el uniform (`pag05`), su localización es `-1` y OpenGL ignora el envío.
+
+
+
+## Diagrama de clases
+
+![alt text](pag_07.png)
+
+`PAG::Model` tiene una relación de composición con `PAG::Material`. `PAG::Renderer` usa la enumeración
+`PAG::ModoVisualizacion` y sigue siendo propietario de los modelos, la cámara y el shader program.
+`PAG::GUI` compone las tres ventanas de contenido (`ModelWindow`, `TransformWindow` y `MaterialWindow`), que
+notifican a los `Listener` mediante `WindowType`.
