@@ -39,6 +39,70 @@ namespace
 
 namespace PAG
 {
+
+//metodos para definir las luces
+
+    Luz& Renderer::luz (int indice)
+    {
+        if (indice < 0 || indice >= static_cast<int>(_luces.size()))
+        {
+            throw std::out_of_range("Indice de luz fuera de rango: " + std::to_string(indice));
+        }
+        return _luces[indice];
+    }
+
+    const Luz& Renderer::luz (int indice) const
+    {
+        if (indice < 0 || indice >= static_cast<int>(_luces.size()))
+        {
+            throw std::out_of_range("Indice de luz fuera de rango: " + std::to_string(indice));
+        }
+        return _luces[indice];
+    }
+
+    void Renderer::anadeLuz (const Luz& l)
+    {
+        _luces.push_back(l);
+    }
+
+    void Renderer::eliminaLuz (int indice)
+    {
+        luz(indice);   // solo para validar el indice (lanza std::out_of_range)
+        _luces.erase(_luces.begin() + indice);
+    }
+
+    void Renderer::modificaLuz (int indice, const Luz& l)
+    {
+        luz(indice) = l;   // lanza out_of_range si el indice no vale
+    }
+
+    int Renderer::numLuces () const
+    {
+        return static_cast<int>(_luces.size());
+    }
+
+    Luz Renderer::consultaLuz (int indice) const
+    {
+        return luz(indice);
+    }
+
+    /**
+     * Escena inicial: una luz ambiente y una puntual a cada lado de los modelos,
+     * para poder apreciar el efecto de cada una por separado.
+     */
+    void Renderer::creaLucesPorDefecto ()
+    {
+        Luz izquierda(TipoLuz::Puntual);
+        izquierda.setPosicion(glm::vec3(-3.0f, 2.0f, 4.0f));
+
+        Luz derecha(TipoLuz::Puntual);
+        derecha.setPosicion(glm::vec3(3.0f, 2.0f, 4.0f));
+
+        _luces.push_back(Luz(TipoLuz::Ambiente));
+        _luces.push_back(izquierda);
+        _luces.push_back(derecha);
+    }
+
     Renderer* Renderer::instancia = nullptr; //debemos declarar la instancia por el atributo estático
 
     /**
@@ -66,6 +130,8 @@ void Renderer::liberarRecursos ()
     _modelos.clear(); //limpias el buffer que estamos cargandp
     // El ShaderProgram se libera solo, via su propio destructor (unique_ptr)
     _huecoModelo.clear();
+    //liberamos las luces tambien
+    _luces.clear();
 }
     /**
      * consulta el unico objeto que hay

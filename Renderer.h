@@ -10,6 +10,7 @@
 #include "ModeloVisualizacion.h"
 #include <glm/glm.hpp>
 #include <vector>
+#include "Luz.h"
 
 
 namespace PAG
@@ -44,6 +45,15 @@ namespace PAG
             const Model& modelo (int indice) const;
             //organizacion de los modelos en la pantalla
             std::vector<int> _huecoModelo;   // hueco de la cuadricula que ocupa cada modelo (paralelo a _modelos)
+
+            //parámetros para la definicion de la luz
+
+            std::vector<Luz> _luces;               // las luces de la escena
+
+            Luz& luz (int indice);
+            const Luz& luz (int indice) const;
+
+
         public:
             virtual ~Renderer (); //destructor virtual, lo necesita virtual porque hereda de listener y el si va a tener destructor virtual
             static Renderer& getInstancia (); //referencia a la instancia estática
@@ -85,6 +95,15 @@ namespace PAG
             //métodos para cambiar los colores del alambre
             void cambiaColorAlambre (const glm::vec3& c);
             const glm::vec3& colorAlambre () const;
+
+            //metodos para las definiciones de las luces
+
+            void anadeLuz (const Luz& l);
+            void eliminaLuz (int indice);
+            void modificaLuz (int indice, const Luz& l);
+            int numLuces () const;
+            Luz consultaLuz (int indice) const;
+            void creaLucesPorDefecto ();   // ambiente + una puntual a cada lado
         };
 }
 

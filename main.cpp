@@ -148,7 +148,9 @@ int main()
     }catch (const std::exception& e){
     PAG::GUI::getInstancia().aniadirMensaje(e.what());
     }
-    
+        // Luces iniciales (mas adelante se gestionaran desde la interfaz)
+    PAG::Renderer::getInstancia().creaLucesPorDefecto();
+    PAG::GUI::getInstancia().aniadirMensaje("Luces creadas: " + std::to_string(PAG::Renderer::getInstancia().numLuces()));
 
     while (!glfwWindowShouldClose(window))
     {
