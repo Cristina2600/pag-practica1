@@ -26,7 +26,6 @@ namespace PAG
 
             //ahora cargamos todos los modelos
             std::vector<std::unique_ptr<Model>> _modelos;
-            int _huecosUsados=0; //distintos modelos sin que se solapen
             //atributos necesarios para la cámara
             Camera _camara;                                     // el Renderer es dueño de la cámara
             CameraMovement _movimiento = CameraMovement::Orbit; // movimiento elegido en la GUI
@@ -39,9 +38,12 @@ namespace PAG
             GLint idUniformColorAlambre = -1; //siempre empieza en menos 1
             glm::vec3 _colorAlambre = glm::vec3(1.0f, 0.0f, 0.0f);   // rojo por defecto
 
-            glm::vec3 siguientePosicion ();
+            int primerHuecoLibre () const;
+            void colocarYAnadir (std::unique_ptr<Model> m);
             Model& modelo (int indice);
             const Model& modelo (int indice) const;
+            //organizacion de los modelos en la pantalla
+            std::vector<int> _huecoModelo;   // hueco de la cuadricula que ocupa cada modelo (paralelo a _modelos)
         public:
             virtual ~Renderer (); //destructor virtual, lo necesita virtual porque hereda de listener y el si va a tener destructor virtual
             static Renderer& getInstancia (); //referencia a la instancia estática

@@ -9,6 +9,33 @@
 #include <stdexcept>
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp> 
+#include <algorithm>
+
+namespace
+{
+    /**
+     * Posicion del centro de un hueco. Cada capa es una cuadricula de 3x3 y las capas
+     * se apilan hacia atras en z. El orden de relleno de cada capa es: fila central,
+     * fila de arriba, fila de abajo; y en cada fila: centro, derecha, izquierda.
+     */
+    glm::vec3 posicionDeHueco (int hueco)
+    {
+        const float ESPACIADO = 1.5f;   // debe ser mayor que el diametro de los modelos (1.0)
+        const int COLUMNAS = 3;
+        const int FILAS = 3;
+        const float columnas[COLUMNAS] = { 0.0f, 1.0f, -1.0f };
+        const float filas[FILAS]       = { 0.0f, 1.0f, -1.0f };
+
+        const int porCapa = COLUMNAS * FILAS;
+        const int capa  = hueco / porCapa;
+        const int celda = hueco % porCapa;
+
+        return glm::vec3(columnas[celda % COLUMNAS] * ESPACIADO,
+                         filas[celda / COLUMNAS] * ESPACIADO,
+                         -capa * ESPACIADO);
+    }
+}
+
 
 namespace PAG
 {
@@ -38,6 +65,7 @@ void Renderer::liberarRecursos ()
 {
     _modelos.clear(); //limpias el buffer que estamos cargandp
     // El ShaderProgram se libera solo, via su propio destructor (unique_ptr)
+    _huecoModelo.clear();
 }
     /**
      * consulta el unico objeto que hay
@@ -317,22 +345,18 @@ void Renderer::moverCamara (double horizontal, double vertical)
 }
 
 
-    /**
-     * Reparte los modelos en una rejilla para que no se solapen. Se usa un
-     * contador creciente para que, al eliminar un
-     * modelo, el siguiente no caiga encima de otro que sigue en la escena.
-     * Cambia ESPACIADO si tus modelos son mas grandes o mas pequenos.
-     */
-    glm::vec3 Renderer::siguientePosicion ()
+     /// Primer hueco que no ocupa ningun modelo: al borrar uno, su hueco se reutiliza
+    int Renderer::primerHuecoLibre () const
     {
-        const float ESPACIADO = 1.2f; //separación entre los modelos
-        const float columnas[3] = { 0.0f, 1.0f, -1.0f };   // centro, derecha, izquierda
-
-        const int n = _huecosUsados++;
-        return glm::vec3(columnas[n % 3] * ESPACIADO, -(n / 3) * ESPACIADO, 0.0f);
+        int hueco = 0;
+        while (std::find(_huecoModelo.begin(), _huecoModelo.end(), hueco) != _huecoModelo.end())
+        {
+            ++hueco;
+        }
+        return hueco;
     }
- 
-    Model& Renderer::modelo (int indice)
+
+        Model& Renderer::modelo (int indice)
     {
         if (indice < 0 || indice >= static_cast<int>(_modelos.size()))
         {
@@ -340,7 +364,7 @@ void Renderer::moverCamara (double horizontal, double vertical)
         }
         return *_modelos[indice];
     }
- 
+
     const Model& Renderer::modelo (int indice) const
     {
         if (indice < 0 || indice >= static_cast<int>(_modelos.size()))
@@ -349,33 +373,42 @@ void Renderer::moverCamara (double horizontal, double vertical)
         }
         return *_modelos[indice];
     }
- 
+
+    /// Coloca el modelo en el primer hueco libre de la cuadricula y lo anade a la escena
+    void Renderer::colocarYAnadir (std::unique_ptr<Model> m)
+    {
+        const int hueco = primerHuecoLibre();
+
+        Transformacion t;
+        t.posicion = posicionDeHueco(hueco);
+        m->setTransformacion(t);
+
+        _modelos.push_back(std::move(m));
+        _huecoModelo.push_back(hueco);
+    }
 
  
     /**
      * Carga un OBJ y lo anade a la escena. Si Model::cargarOBJ lanza una excepcion,
      * el modelo local se destruye y NO se anade nada (el vector queda intacto).
      */
-    void Renderer::cargaModelo (const std::string& ruta)
+        void Renderer::cargaModelo (const std::string& ruta)
     {
         std::unique_ptr<Model> m = std::make_unique<Model>();
         m->cargarOBJ(ruta);
- 
+
         // Nombre = nombre del fichero sin la carpeta
         const size_t separador = ruta.find_last_of("/\\");
         m->setNombre(separador == std::string::npos ? ruta : ruta.substr(separador + 1));
- 
-        Transformacion t;
-        t.posicion = siguientePosicion();
-        m->setTransformacion(t);
- 
-        _modelos.push_back(std::move(m));
+
+        colocarYAnadir(std::move(m));
     }
  
     void Renderer::eliminaModelo (int indice)
     {
         modelo(indice);  // solo para validar el indice (lanza std::out_of_range)
         _modelos.erase(_modelos.begin() + indice);
+        _huecoModelo.erase(_huecoModelo.begin() + indice);
     }
  
     void Renderer::transformaModelo (int indice, const Transformacion& t)
@@ -404,11 +437,7 @@ void Renderer::creaTriangulo ()
     m->crearTriangulo();
     m->setNombre("Triangulo");
 
-    Transformacion t;
-    t.posicion = siguientePosicion();
-    m->setTransformacion(t);
-
-    _modelos.push_back(std::move(m));
+    colocarYAnadir(std::move(m));
 }
 
     void Renderer::asignaMaterial (int indice, const Material& m)

@@ -7,7 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Model.h"
-
+#include <algorithm>
 namespace
 {
     /**
@@ -58,6 +58,49 @@ namespace
             {
                 indices.push_back(cara.mIndices[j] + desplazamiento);
             }
+        }
+    }
+
+        /**
+     * Centra la malla en el origen y la escala para que quepa en una esfera del
+     * diametro indicado. Asi todos los modelos ocupan un espacio comparable y
+     * pueden repartirse en una cuadricula sin solaparse, vengan del OBJ que vengan.
+     * Las normales no cambian: una escala uniforme no altera su direccion.
+     */
+    void normalizarTamano (std::vector<GLfloat>& posiciones, float diametro)
+    {
+        if (posiciones.size() < 3)
+        {
+            return;
+        }
+
+        glm::vec3 minimo(posiciones[0], posiciones[1], posiciones[2]);
+        glm::vec3 maximo = minimo;
+        for (size_t i = 0; i + 2 < posiciones.size(); i += 3)
+        {
+            const glm::vec3 p(posiciones[i], posiciones[i + 1], posiciones[i + 2]);
+            minimo = glm::min(minimo, p);
+            maximo = glm::max(maximo, p);
+        }
+        const glm::vec3 centro = (minimo + maximo) * 0.5f;
+
+        float radio = 0.0f;   // distancia del centro al vertice mas lejano
+        for (size_t i = 0; i + 2 < posiciones.size(); i += 3)
+        {
+            const glm::vec3 p(posiciones[i], posiciones[i + 1], posiciones[i + 2]);
+            radio = std::max(radio, glm::length(p - centro));
+        }
+        if (radio <= 0.0f)
+        {
+            return;
+        }
+
+        const float factor = (diametro * 0.5f) / radio;
+        for (size_t i = 0; i + 2 < posiciones.size(); i += 3)
+        {
+            posiciones[i]     = (posiciones[i]     - centro.x) * factor;
+            posiciones[i + 1] = (posiciones[i + 1] - centro.y) * factor;
+            posiciones[i + 2] = (posiciones[i + 2] - centro.z) * factor;
         }
     }
 
@@ -156,7 +199,7 @@ namespace PAG
         {
             throw std::runtime_error("El modelo '" + ruta + "' no contiene triangulos");
         }
-
+        normalizarTamano(posiciones, 1.0f);   // NUEVO: diametro 1, centrado en el origen
         // Solo si todo ha ido bien se tocan los recursos OpenGL del modelo
         crearBuffers(posiciones, colores, indices);
     }
