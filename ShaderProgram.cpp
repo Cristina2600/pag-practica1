@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "ShaderProgram.h"
 
@@ -107,12 +108,14 @@ namespace PAG
         return idSP != 0;
     }
 
-    void ShaderProgram::liberar ()
+        void ShaderProgram::liberar ()
     {
         if (idVS != 0) { glDeleteShader(idVS);  idVS = 0; }
         if (idFS != 0) { glDeleteShader(idFS);  idFS = 0; }
         if (idSP != 0) { glDeleteProgram(idSP); idSP = 0; }
+        _ubicaciones.clear();
     }
+    
     bool ShaderProgram::activarSubrutina (GLenum tipoShader, const std::string& nombre) const
     {
         GLuint indice = glGetSubroutineIndex(idSP, tipoShader, nombre.c_str());
@@ -122,5 +125,36 @@ namespace PAG
         }
         glUniformSubroutinesuiv(tipoShader, 1, &indice);
         return true;
+    }
+        GLint ShaderProgram::ubicacion (const std::string& nombre) const
+    {
+        auto it = _ubicaciones.find(nombre);
+        if (it != _ubicaciones.end())
+        {
+            return it->second;
+        }
+        const GLint loc = glGetUniformLocation(idSP, nombre.c_str());
+        _ubicaciones[nombre] = loc;   // tambien se guarda -1: asi no se vuelve a preguntar
+        return loc;
+    }
+
+    void ShaderProgram::setUniform (const std::string& nombre, float v) const
+    {
+        glUniform1f(ubicacion(nombre), v);
+    }
+
+    void ShaderProgram::setUniform (const std::string& nombre, const glm::vec3& v) const
+    {
+        glUniform3fv(ubicacion(nombre), 1, glm::value_ptr(v));
+    }
+
+    void ShaderProgram::setUniform (const std::string& nombre, const glm::mat3& m) const
+    {
+        glUniformMatrix3fv(ubicacion(nombre), 1, GL_FALSE, glm::value_ptr(m));
+    }
+
+    void ShaderProgram::setUniform (const std::string& nombre, const glm::mat4& m) const
+    {
+        glUniformMatrix4fv(ubicacion(nombre), 1, GL_FALSE, glm::value_ptr(m));
     }
 }

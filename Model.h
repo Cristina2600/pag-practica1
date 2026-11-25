@@ -36,6 +36,7 @@ namespace PAG
             GLuint idVBOColor = 0;  // datos: colores (location 1)
             GLuint idIBO = 0;       // indices de los triangulos
             GLsizei _numIndices = 0;
+            GLuint idVBONormal = 0;  // datos: normales (location 1)
 
             std::string _nombre = "Modelo";
             Transformacion _transformacion;
@@ -43,8 +44,8 @@ namespace PAG
             
 
             void crearBuffers (const std::vector<GLfloat>& posiciones,
-                               const std::vector<GLfloat>& colores,
-                               const std::vector<GLuint>& indices); //estos son los buffers que definen toda la geometria
+                               const std::vector<GLfloat>& normales,
+                               const std::vector<GLuint>& indices); //estos son los buffers que definen toda la geometria//estos son los buffers que definen toda la geometria
             void actualizarMatrizModelado (); //funcion auxiliar en privado
 
             //cada modelo va a tener guardado su material

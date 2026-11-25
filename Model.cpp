@@ -15,9 +15,9 @@ namespace
      * Como todas las mallas acaban en un unico VAO, los indices de cada malla hay
      * que desplazarlos tantos vertices como ya hubiera
      */
-    void procesarMalla (const aiMesh* malla,
+        void procesarMalla (const aiMesh* malla,
                         std::vector<GLfloat>& posiciones,
-                        std::vector<GLfloat>& colores,
+                        std::vector<GLfloat>& normales,
                         std::vector<GLuint>& indices)
     {
         //esto es para ver cuantos vertices hay y desplazarnos todos esos para iniciar la malla 
@@ -30,20 +30,19 @@ namespace
             posiciones.push_back(p.y);
             posiciones.push_back(p.z);
 
-            // Aun no hay luces ni materiales: el "color" del vertice se obtiene de
-            // su normal (de [-1,1] a [0,1]) para que el modelo no se vea plano.
+            // La normal se envia TAL CUAL: la iluminacion la necesita en [-1,1]
             if (malla->HasNormals())
             {
                 const aiVector3D& n = malla->mNormals[v];
-                colores.push_back(n.x * 0.5f + 0.5f);
-                colores.push_back(n.y * 0.5f + 0.5f);
-                colores.push_back(n.z * 0.5f + 0.5f);
+                normales.push_back(n.x);
+                normales.push_back(n.y);
+                normales.push_back(n.z);
             }
             else
             {
-                colores.push_back(1.0f);
-                colores.push_back(1.0f);
-                colores.push_back(1.0f);
+                normales.push_back(0.0f);
+                normales.push_back(0.0f);
+                normales.push_back(1.0f);
             }
         }
 
@@ -105,18 +104,18 @@ namespace
     }
 
     /// Recorre el arbol de nodos de Assimp procesando las mallas de cada nodo
-    void procesarNodo (const aiNode* nodo, const aiScene* escena,
+        void procesarNodo (const aiNode* nodo, const aiScene* escena,
                        std::vector<GLfloat>& posiciones,
-                       std::vector<GLfloat>& colores,
+                       std::vector<GLfloat>& normales,
                        std::vector<GLuint>& indices)
     {
         for (unsigned int i = 0; i < nodo->mNumMeshes; ++i)
         {
-            procesarMalla(escena->mMeshes[nodo->mMeshes[i]], posiciones, colores, indices);
+            procesarMalla(escena->mMeshes[nodo->mMeshes[i]], posiciones, normales, indices);
         }
         for (unsigned int i = 0; i < nodo->mNumChildren; ++i)
         {
-            procesarNodo(nodo->mChildren[i], escena, posiciones, colores, indices);
+            procesarNodo(nodo->mChildren[i], escena, posiciones, normales, indices);
         }
     }
 }
@@ -132,8 +131,8 @@ namespace PAG
      * Crea el VAO con sus VBOs e IBO a partir de arrays en CPU.
      * El VAO se activa PRIMERO: todo lo que se configura despues queda grabado en el.
      */
-    void Model::crearBuffers (const std::vector<GLfloat>& posiciones,
-                              const std::vector<GLfloat>& colores,
+        void Model::crearBuffers (const std::vector<GLfloat>& posiciones,
+                              const std::vector<GLfloat>& normales,
                               const std::vector<GLuint>& indices)
     {
         liberar();  // por si el modelo ya tenia geometria
@@ -150,10 +149,10 @@ namespace PAG
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
 
-        // Atributo 1: colores
-        glGenBuffers(1, &idVBOColor);
-        glBindBuffer(GL_ARRAY_BUFFER, idVBOColor);
-        glBufferData(GL_ARRAY_BUFFER, colores.size() * sizeof(GLfloat), colores.data(), GL_STATIC_DRAW);
+        // Atributo 1: normales
+        glGenBuffers(1, &idVBONormal);
+        glBindBuffer(GL_ARRAY_BUFFER, idVBONormal);
+        glBufferData(GL_ARRAY_BUFFER, normales.size() * sizeof(GLfloat), normales.data(), GL_STATIC_DRAW);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(1);
 
@@ -165,21 +164,21 @@ namespace PAG
         glBindVertexArray(0);  // dejamos de modificar este VAO
     }
 
-    void Model::crearTriangulo ()
+        void Model::crearTriangulo ()
     {
         std::vector<GLfloat> posiciones = { -.5f, -.5f, 0.0f,
                                              .5f, -.5f, 0.0f,
                                              .0f,  .5f, 0.0f };
-        std::vector<GLfloat> colores    = { 1.0f, 0.0f, 0.0f,
-                                            0.0f, 1.0f, 0.0f,
+        // Las tres normales apuntan hacia +Z, hacia la camara (el triangulo es plano)
+        std::vector<GLfloat> normales   = { 0.0f, 0.0f, 1.0f,
+                                            0.0f, 0.0f, 1.0f,
                                             0.0f, 0.0f, 1.0f };
         std::vector<GLuint> indices     = { 0, 1, 2 };
 
-        crearBuffers(posiciones, colores, indices);
-       
+        crearBuffers(posiciones, normales, indices);
     }
 
-    void Model::cargarOBJ (const std::string& ruta)
+        void Model::cargarOBJ (const std::string& ruta)
     {
         Assimp::Importer importador;
         const aiScene* escena = importador.ReadFile(ruta,
@@ -191,17 +190,17 @@ namespace PAG
         }
 
         std::vector<GLfloat> posiciones;
-        std::vector<GLfloat> colores;
+        std::vector<GLfloat> normales;
         std::vector<GLuint> indices;
-        procesarNodo(escena->mRootNode, escena, posiciones, colores, indices);
+        procesarNodo(escena->mRootNode, escena, posiciones, normales, indices);
 
         if (indices.empty())
         {
             throw std::runtime_error("El modelo '" + ruta + "' no contiene triangulos");
         }
-        normalizarTamano(posiciones, 1.0f);   // NUEVO: diametro 1, centrado en el origen
+        normalizarTamano(posiciones, 1.0f);   // diametro 1, centrado en el origen
         // Solo si todo ha ido bien se tocan los recursos OpenGL del modelo
-        crearBuffers(posiciones, colores, indices);
+        crearBuffers(posiciones, normales, indices);
     }
 
     /**
@@ -219,12 +218,12 @@ namespace PAG
     }
 
     /// Borra primero el VAO y despues los buffers (el VAO no borra los buffers por si solo)
-    void Model::liberar ()
+        void Model::liberar ()
     {
-        if (idVAO != 0)      { glDeleteVertexArrays(1, &idVAO);   idVAO = 0; }
-        if (idVBOPos != 0)   { glDeleteBuffers(1, &idVBOPos);     idVBOPos = 0; }
-        if (idVBOColor != 0) { glDeleteBuffers(1, &idVBOColor);   idVBOColor = 0; }
-        if (idIBO != 0)      { glDeleteBuffers(1, &idIBO);        idIBO = 0; }
+        if (idVAO != 0)       { glDeleteVertexArrays(1, &idVAO);   idVAO = 0; }
+        if (idVBOPos != 0)    { glDeleteBuffers(1, &idVBOPos);     idVBOPos = 0; }
+        if (idVBONormal != 0) { glDeleteBuffers(1, &idVBONormal);  idVBONormal = 0; }
+        if (idIBO != 0)       { glDeleteBuffers(1, &idIBO);        idIBO = 0; }
         _numIndices = 0;
     }
 

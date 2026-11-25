@@ -53,6 +53,10 @@ namespace PAG
             Luz& luz (int indice);
             const Luz& luz (int indice) const;
 
+            // Una pasada de iluminacion se reparte en dos pasos: configurar la luz y dibujar los modelos
+            void aplicaLuz (const Luz& l, const glm::mat4& vista);
+            void dibujaModelos (const glm::mat4& vista, const glm::mat4& vp);
+
 
         public:
             virtual ~Renderer (); //destructor virtual, lo necesita virtual porque hereda de listener y el si va a tener destructor virtual

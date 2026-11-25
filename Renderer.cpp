@@ -34,6 +34,18 @@ namespace
                          filas[celda / COLUMNAS] * ESPACIADO,
                          -capa * ESPACIADO);
     }
+        /// Nombre de la subrutina del fragment shader que implementa cada tipo de luz
+    const char* nombreSubrutina (PAG::TipoLuz t)
+    {
+        switch (t)
+        {
+            case PAG::TipoLuz::Ambiente:    return "luzAmbiente";
+            case PAG::TipoLuz::Puntual:     return "luzPuntual";
+            case PAG::TipoLuz::Direccional: return "luzDireccional";
+            case PAG::TipoLuz::Foco:        return "luzFoco";
+        }
+        return "sinLuz";
+    }
 }
 
 
@@ -90,6 +102,11 @@ namespace PAG
      * Escena inicial: una luz ambiente y una puntual a cada lado de los modelos,
      * para poder apreciar el efecto de cada una por separado.
      */
+        /**
+     * Escena inicial: una puntual a cada lado de los modelos y una luz ambiente.
+     * De momento solo se usa la primera luz, asi que va una puntual primero para
+     * que se aprecie el sombreado. Con multipasada el orden no importara.
+     */
     void Renderer::creaLucesPorDefecto ()
     {
         Luz izquierda(TipoLuz::Puntual);
@@ -98,11 +115,10 @@ namespace PAG
         Luz derecha(TipoLuz::Puntual);
         derecha.setPosicion(glm::vec3(3.0f, 2.0f, 4.0f));
 
-        _luces.push_back(Luz(TipoLuz::Ambiente));
         _luces.push_back(izquierda);
         _luces.push_back(derecha);
+        _luces.push_back(Luz(TipoLuz::Ambiente));
     }
-
     Renderer* Renderer::instancia = nullptr; //debemos declarar la instancia por el atributo estático
 
     /**
@@ -176,35 +192,58 @@ void Renderer::liberarRecursos ()
      * Refresco de la escena. Se realizan varias cosas a la vez activa el shader, calcula
      * P*V una sola vez y, para cada modelo, envia P*V*M y le pide que se dibuje.
      */
+        /**
+     * Refresco de la escena. En modo alambre pinta un color fijo. En modo solido
+     * aplica la primera luz encendida (el ejercicio 4 lo ampliara a todas, con un
+     * bucle de pasadas) y dibuja los modelos.
+     */
     void Renderer::refrescar ()
     {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //limpiamos el buffer de color
- 
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         if (!_shaderProgram->estaCargado())
         {
             return;
         }
- 
-        _shaderProgram->activar();   // el programa debe estar activo ANTES de enviar uniforms y antes de subrutinas
+
+        _shaderProgram->activar();   // ANTES de enviar uniforms y de activar subrutinas
 
         // Modo de visualizacion: estado global, una vez por fotograma
         const bool alambre = (_modo == ModoVisualizacion::Alambre);
         glPolygonMode(GL_FRONT_AND_BACK, alambre ? GL_LINE : GL_FILL);
-        _shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER,
-                                         alambre ? "colorAlambre" : "colorSolido");
 
- 
-        const glm::mat4 vp = _camara.matrizVisionProyeccion();
- 
-       for (const std::unique_ptr<Model>& m : _modelos)
+        const glm::mat4 vista = _camara.matrizVision();
+        const glm::mat4 vp    = _camara.matrizVisionProyeccion();
+
+        if (alambre)
         {
-            const glm::mat4 mvp = vp * m->getMatrizModelado();
-            glUniformMatrix4fv(idUniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
-            glUniform3fv(idUniformColorDifuso, 1,
-                         glm::value_ptr(m->getMaterial().getDifuso()));
-            glUniform3fv(idUniformColorAlambre, 1, glm::value_ptr(_colorAlambre));  
-            m->dibujar();
+            _shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, "colorAlambre");
+            _shaderProgram->setUniform("uColorAlambre", _colorAlambre);
         }
+        else
+        {
+            // Primera luz encendida
+            const Luz* primera = nullptr;
+            for (const Luz& l : _luces)
+            {
+                if (l.estaEncendida())
+                {
+                    primera = &l;
+                    break;
+                }
+            }
+
+            if (primera != nullptr)
+            {
+                aplicaLuz(*primera, vista);
+            }
+            else if (!_shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, "sinLuz"))
+            {
+                _shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, "colorSolido");  // pag07
+            }
+        }
+
+        dibujaModelos(vista, vp);
     }
     /**
      * Ajusta el viewport cuando cambia el tamaño de la ventana
@@ -384,10 +423,7 @@ cargaModelo("models/pokemon_sylveon.obj");
  */ 
 void Renderer::creaShaderProgram (const std::string& nombreBase)
 {
-    _shaderProgram->cargar(nombreBase);
-    idUniformMVP = _shaderProgram->getUniformLocation("matrizMVP");    //busca los shaders con este tipo de matriz  
-    idUniformColorDifuso = _shaderProgram->getUniformLocation("uColorDifuso");
-    idUniformColorAlambre = _shaderProgram->getUniformLocation("uColorAlambre");
+    _shaderProgram->cargar(nombreBase);   // las ubicaciones de los uniforms las gestiona ShaderProgram
 }
 
 
@@ -534,5 +570,65 @@ void Renderer::creaTriangulo ()
     const glm::vec3& Renderer::colorAlambre () const
     {
         return _colorAlambre;
+    }
+        /**
+     * Configura el shader para procesar UNA luz: elige la subrutina de su tipo y envia
+     * sus datos. Los calculos de iluminacion se hacen en espacio de VISION, asi que
+     * posicion y direccion pasan del mundo a la vision aqui, en C++.
+     */
+    void Renderer::aplicaLuz (const Luz& l, const glm::mat4& vista)
+    {
+        if (!_shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, nombreSubrutina(l.getTipo())))
+        {
+            _shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, "colorSolido");  // pag07
+        }
+
+        _shaderProgram->setUniform("uIa", l.getIa());
+        _shaderProgram->setUniform("uId", l.getId());
+        _shaderProgram->setUniform("uIs", l.getIs());
+
+        // Direccion protegida contra el vector nulo (normalize(0) daria NaN)
+        glm::vec3 direccion = l.getDireccion();
+        if (glm::length(direccion) < 1e-6f)
+        {
+            direccion = glm::vec3(0.0f, 0.0f, -1.0f);
+        }
+
+        // Posicion: es un PUNTO (w = 1), le afecta la traslacion de la camara.
+        // Direccion: es un VECTOR, solo le afecta la rotacion (parte 3x3).
+        const glm::vec3 posicionVision  = glm::vec3(vista * glm::vec4(l.getPosicion(), 1.0f));
+        const glm::vec3 direccionVision = glm::normalize(glm::mat3(vista) * direccion);
+
+        _shaderProgram->setUniform("uPosicionLuz", posicionVision);
+        _shaderProgram->setUniform("uDireccionLuz", direccionVision);
+        _shaderProgram->setUniform("uCosGamma", glm::cos(glm::radians(l.getGamma())));
+        _shaderProgram->setUniform("uS", l.getS());
+    }
+
+    /**
+     * Dibuja todos los modelos con la luz y la subrutina que haya configurado el shader.
+     */
+    void Renderer::dibujaModelos (const glm::mat4& vista, const glm::mat4& vp)
+    {
+        for (const std::unique_ptr<Model>& m : _modelos)
+        {
+            const glm::mat4 modelado = m->getMatrizModelado();
+            const glm::mat4 mv  = vista * modelado;
+            const glm::mat4 mvp = vp * modelado;
+            const glm::mat3 matrizNormal = glm::transpose(glm::inverse(glm::mat3(mv)));
+
+            _shaderProgram->setUniform("matrizMVP", mvp);
+            _shaderProgram->setUniform("matrizMV", mv);
+            _shaderProgram->setUniform("matrizNormal", matrizNormal);
+
+            const Material& mat = m->getMaterial();
+            _shaderProgram->setUniform("uKa", mat.getAmbiente());
+            _shaderProgram->setUniform("uKd", mat.getDifuso());
+            _shaderProgram->setUniform("uKs", mat.getEspecular());
+            _shaderProgram->setUniform("uNs", mat.getExponente());
+            _shaderProgram->setUniform("uColorDifuso", mat.getDifuso());   // compatibilidad con pag07
+
+            m->dibujar();
+        }
     }
 }
