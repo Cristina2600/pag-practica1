@@ -259,7 +259,7 @@ void Renderer::liberarRecursos ()
             dibujaModelos(vista, vp);
         }
     }
-    
+
     /**
      * Ajusta el viewport cuando cambia el tamaño de la ventana
      * @note Ahora hemos añadido una proporcion del aspecto para que aunque cambie la pantalla siemore se mantenga en valores proporcionales  
@@ -415,6 +415,35 @@ void Renderer::wakeUp (WindowType t, ...)
             glm::vec3 color(c[0], c[1], c[2]);   // copiar antes de cerrar la lista
             va_end(args);
             cambiaColorAlambre(color);
+            break;
+        }
+                case WindowType::LightAdd:
+        {
+            va_list args;
+            va_start(args, t);
+            int tipo = va_arg(args, int);
+            va_end(args);
+            anadeLuz(Luz(static_cast<TipoLuz>(tipo)));
+            break;
+        }
+        case WindowType::LightRemove:
+        {
+            va_list args;
+            va_start(args, t);
+            int indice = va_arg(args, int);
+            va_end(args);
+            eliminaLuz(indice);                  // lanza out_of_range si el indice no vale
+            break;
+        }
+        case WindowType::LightModify:
+        {
+            va_list args;
+            va_start(args, t);
+            int indice = va_arg(args, int);
+            const Luz* recibida = va_arg(args, const Luz*);
+            Luz copia = *recibida;               // copiar ANTES de cerrar la lista
+            va_end(args);
+            modificaLuz(indice, copia);          // lanza out_of_range si el indice no vale
             break;
         }
     }

@@ -143,6 +143,11 @@ namespace PAG
                 dibujarSeccionMensajes();
                 ImGui::PopID();
             }
+            if (ImGui::TreeNode("Luces"))
+            {
+                _ventanaLuces.dibujarContenido();
+                ImGui::TreePop();
+            }
         }
         ImGui::End(); //esto se llama siempre se abra o no la ventana
 
@@ -309,6 +314,7 @@ namespace PAG
         _ventanaModelos.addListener(listener); //aqui añadimos los listeners de los modelos obj 
         _ventanaTransformaciones.addListener(listener);  //registramos los listeners para amnejar lo cambios en transformaciones 
         _ventanaMaterial.addListener(listener);
+        _ventanaLuces.addListener(listener);
     }
 
     /**

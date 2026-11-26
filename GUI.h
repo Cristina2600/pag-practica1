@@ -11,6 +11,7 @@
 #include "TransformWindow.h"
 #include "MaterialWindow.h"
 #include "ModeloVisualizacion.h"
+#include "LightWindow.h"
 struct GLFWwindow; //forward declaration, es solo para declarar la funcion inicializar más abajo
 
 #include "Listener.h" //vamos a necesitar un vector de objetos que escuchen los cambios 
@@ -46,6 +47,8 @@ namespace PAG //vamos a usar siempre nuestro espacio de nombres
             ModelWindow _ventanaModelos;
             TransformWindow _ventanaTransformaciones;
             MaterialWindow _ventanaMaterial; 
+            //para las luces
+            LightWindow _ventanaLuces;
             //el modo de visualizacion tendrá dos enteros, por defecto solido
             int _modoVisualizacion = static_cast<int>(ModoVisualizacion::Solido); 
             
