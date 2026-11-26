@@ -170,7 +170,9 @@ void Renderer::liberarRecursos ()
     {
         glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], _bgColor[3]); //aplicamos el clor de fondo que hemos declarado en el cosntructor
         glEnable(GL_DEPTH_TEST); //activamos opengl
-        glEnable ( GL_MULTISAMPLE ); //
+        glEnable ( GL_MULTISAMPLE ); 
+        glDepthFunc(GL_LEQUAL);   // las pasadas repiten la misma profundidad: deben pasar el test
+        glEnable(GL_BLEND);       // permite sumar cada pasada al color acumulado
     }
 
 
@@ -188,14 +190,11 @@ void Renderer::liberarRecursos ()
         return ss.str();
     }
 
-    /**
-     * Refresco de la escena. Se realizan varias cosas a la vez activa el shader, calcula
-     * P*V una sola vez y, para cada modelo, envia P*V*M y le pide que se dibuje.
-     */
         /**
-     * Refresco de la escena. En modo alambre pinta un color fijo. En modo solido
-     * aplica la primera luz encendida (el ejercicio 4 lo ampliara a todas, con un
-     * bucle de pasadas) y dibuja los modelos.
+     * Refresco de la escena.
+     *  - Alambre: una sola pasada con color fijo.
+     *  - Solido: una pasada por cada luz encendida; los resultados se suman con mezcla.
+     *  - Solido sin luces: una pasada con la subrutina sinLuz (modelos negros).
      */
     void Renderer::refrescar ()
     {
@@ -208,43 +207,59 @@ void Renderer::liberarRecursos ()
 
         _shaderProgram->activar();   // ANTES de enviar uniforms y de activar subrutinas
 
-        // Modo de visualizacion: estado global, una vez por fotograma
         const bool alambre = (_modo == ModoVisualizacion::Alambre);
         glPolygonMode(GL_FRONT_AND_BACK, alambre ? GL_LINE : GL_FILL);
 
         const glm::mat4 vista = _camara.matrizVision();
         const glm::mat4 vp    = _camara.matrizVisionProyeccion();
 
+        // ---- Alambre: una unica pasada, sin iluminacion ----
         if (alambre)
         {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             _shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, "colorAlambre");
             _shaderProgram->setUniform("uColorAlambre", _colorAlambre);
+            dibujaModelos(vista, vp);
+            return;
         }
-        else
+
+        // ---- Solido: una pasada por luz encendida ----
+        bool primeraPasada = true;
+        for (const Luz& l : _luces)
         {
-            // Primera luz encendida
-            const Luz* primera = nullptr;
-            for (const Luz& l : _luces)
+            if (!l.estaEncendida())
             {
-                if (l.estaEncendida())
-                {
-                    primera = &l;
-                    break;
-                }
+                continue;
             }
 
-            if (primera != nullptr)
+            if (primeraPasada)
             {
-                aplicaLuz(*primera, vista);
+                // Sustituye lo que hay en el framebuffer (alfa = 1)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
-            else if (!_shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, "sinLuz"))
+            else
+            {
+                // Suma esta luz a lo ya acumulado
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            }
+
+            aplicaLuz(l, vista);
+            dibujaModelos(vista, vp);
+            primeraPasada = false;
+        }
+
+        // ---- Ninguna luz encendida: modelos negros en vez de desaparecer ----
+        if (primeraPasada)
+        {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            if (!_shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, "sinLuz"))
             {
                 _shaderProgram->activarSubrutina(GL_FRAGMENT_SHADER, "colorSolido");  // pag07
             }
+            dibujaModelos(vista, vp);
         }
-
-        dibujaModelos(vista, vp);
     }
+    
     /**
      * Ajusta el viewport cuando cambia el tamaño de la ventana
      * @note Ahora hemos añadido una proporcion del aspecto para que aunque cambie la pantalla siemore se mantenga en valores proporcionales  
